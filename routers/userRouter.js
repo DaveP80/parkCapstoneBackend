@@ -11,11 +11,11 @@ const {
   loginFunc,
 } = require("../controllers/userController");
 
-const jwtMiddleware = require("../lib/authMiddleware/jwtMiddleware");
+const { authUserMiddleware, jwtMiddleware } = require("../lib/authMiddleware/jwtMiddleware");
 
 router.get("/", jwtMiddleware, allGetUsersFunc);
 
-router.get("/create-user/auth", authCreateUser);
+router.get("/create-user/auth", authUserMiddleware, authCreateUser);
 
 //router.post("/create-user", checkEmpty, validateData, createUserFunc);
 router.post("/create-user", createUserFunc);
