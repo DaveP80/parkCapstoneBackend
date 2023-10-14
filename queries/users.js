@@ -38,14 +38,6 @@ const createUser = async (data) => {
   let salt = await bcrypt.genSalt(10);
 
   let hashedPassword = await bcrypt.hash(password, salt);
-  let jwtToken = jwt.sign(
-    {
-      email: email,
-      password: hashedPassword,
-    },
-    process.env.JWT_TOKEN_SECRET_KEY,
-    { expiresIn: "7d" }
-  );
 
   try {
     const res = await db.any(
@@ -54,6 +46,16 @@ const createUser = async (data) => {
     );
 
     if (res[0]) {
+      let jwtToken = jwt.sign(
+        {
+          email: email,
+          password: hashedPassword,
+          id: res[0]["id"],
+        },
+        process.env.JWT_TOKEN_SECRET_KEY,
+        { expiresIn: "7d" }
+      );
+
       const transporter = nodemailer.createTransport({
         service: "Gmail",
         auth: {
@@ -79,11 +81,19 @@ const createUser = async (data) => {
       console.log("Email sent:", info.response);
       return { message: `Email sent to ${email} successfully` };
     } else {
-      return { error: `User with email ${email} already exists.` };
+      throw {
+        message: `Email host server error`,
+        error: "SMTP error",
+        status: 403,
+      };
     }
   } catch (error) {
     console.error("Error sending email:", error);
-    return { SMTPerror: `Email host server error` };
+    throw {
+      message: `User with email ${email} already exists.`,
+      error: "Pg error",
+      status: 409,
+    };
   }
 };
 
@@ -92,14 +102,14 @@ const login = async (data) => {
     const { email, password } = data;
 
     const foundUser = await db.any(
-      "SELECT * FROM users WHERE email = $1",
+      "SELECT * FROM client_user WHERE email = $1 and is_auth=true",
       email
     );
 
     if (foundUser.length === 0) {
       throw {
         message: "error",
-        error: "User does not exists please go sign up",
+        error: "Invalid email credential",
       };
     } else {
       let user = foundUser[0];
@@ -117,7 +127,6 @@ const login = async (data) => {
           {
             id: user.id,
             email: user.email,
-            username: user.username,
           },
           process.env.JWT_TOKEN_SECRET_KEY,
           { expiresIn: "7d" }
@@ -131,8 +140,32 @@ const login = async (data) => {
   }
 };
 
+const authLogin = async (data) => {
+  try {
+    const { email, password, id } = data;
+
+    const auUser = await db.any(
+      "Update client_user set is_auth = true where id=$1 and password=$2 returning *",
+      [id, password]
+    );
+
+    if (auUser.length === 0) {
+      throw {
+        message: "Invalid id and password",
+        error: `check id ${id} password ${password.slice(0, 10)}...`,
+        status: 403,
+      };
+    } else {
+      return auUser[0];
+    }
+  } catch (e) {
+    throw { message: "server error", error: JSON.stringify(e), status: 500 };
+  }
+};
+
 module.exports = {
   getAllUsers,
   createUser,
   login,
+  authLogin,
 };

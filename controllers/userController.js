@@ -1,5 +1,9 @@
-const jwt = require("jsonwebtoken");
-const { getAllUsers, createUser, login } = require("../queries/users");
+const {
+  getAllUsers,
+  createUser,
+  login,
+  authLogin,
+} = require("../queries/users");
 
 const { parsedMessage } = require("../lib/helper/helper");
 
@@ -18,38 +22,30 @@ const allGetUsersFunc = async (req, res) => {
 const createUserFunc = async (req, res, next) => {
   createUser(req.body)
     .then((response) => {
-      if (response?.error) {
-        throw {
-          message: response.error,
-          status: 409,
-        };
-      } else if (response?.SMTPerror) {
-        throw {
-          message: response.SMTPerror,
-          status: 409,
-        };
-      } else if (response?.message) {
-        res.json({ message: "Email sent" });
-      } else {
-        res.status(500).json({ error: "database or email error" });
-      }
+      res.json(response);
     })
     .catch((e) => {
-      res.status(500).json({ error: "server error" });
+      let st = 500;
+      if (e?.status && typeof e.status == "number") {
+        st = e.status;
+      }
+      res.status(st).json({ message: e.message, error: e.error });
     });
 };
 
 const authCreateUser = async (req, res, next) => {
-  const jwtToken = req.query.k;
-  if (jwtToken) {
-    const decoded = jwt.verify(jwtToken, process.env.JWT_TOKEN_SECRET_KEY);
-
-    const { email, password } = decoded;
-
-    const authLogin = await login({ email: email, password: password });
-  } else {
-    res.status(400).send("JWT Token (k) not provided in the query string");
-  }
+  const { email, password, id } = res.locals.decodedToken;
+  authLogin({ email, password, id })
+    .then((response) => {
+      res.status(201).json(response);
+    })
+    .catch((e) => {
+      let st = 500;
+      if (e?.status && typeof e.status == "number") {
+        st = e.status;
+      }
+      res.status(st).json({ message: e.message, error: e.error });
+    });
 };
 
 const loginFunc = async (req, res, next) => {
