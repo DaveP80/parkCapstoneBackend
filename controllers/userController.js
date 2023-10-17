@@ -3,9 +3,10 @@ const {
   createUser,
   login,
   authLogin,
+  getInfo,
 } = require("../queries/users");
 
-const { parsedMessage } = require("../lib/helper/helper");
+const { parsedMessage, stc } = require("../lib/helper/helper");
 
 const allGetUsersFunc = async (req, res) => {
   const allUsers = await getAllUsers();
@@ -25,41 +26,49 @@ const createUserFunc = async (req, res, next) => {
       res.json(response);
     })
     .catch((e) => {
-      let st = 500;
-      if (e?.status && typeof e.status == "number") {
-        st = e.status;
-      }
-      res.status(st).json({ message: e.message, error: e.error });
+      res.status(stc(e)).json({ message: e.message, error: e.error });
     });
 };
-
+//Endpoint for authenticating user after they click emaillink
 const authCreateUser = async (req, res, next) => {
-  const { email, password, id } = res.locals.decodedToken;
-  authLogin({ email, password, id })
+  const { first_name, last_name, email, id, is_renter } =
+    res.locals.decodedData;
+  authLogin(id, is_renter)
     .then((response) => {
       res.status(201).json(response);
     })
     .catch((e) => {
-      let st = 500;
-      if (e?.status && typeof e.status == "number") {
-        st = e.status;
+      if (e.hasOwnProperty("clientUser")) {
+        res.status(stc(e)).json(e);
+      } else {
+        res.status(stc(e)).json({ message: e.message, error: e.error });
       }
-      res.status(st).json({ message: e.message, error: e.error });
     });
 };
 
 const loginFunc = async (req, res, next) => {
-  try {
-    const foundUser = await login(req.body);
+  await login(req.body)
+    .then((response) => {
+      res.cookie('accessToken', response.tokens[1], {
+        httpOnly: true,
+        secure: true,
+        maxAge: 15000,
+        sameSite: 'None'
+      }).json({
+        accessToken: response.tokens[0]
+        });
+    }).catch((e) => {
+      res.status(stc(e)).json(e);
+    });
+};
 
-    if (foundUser.status === 500) {
-      throw foundUser;
-    } else {
-      res.json({ token: foundUser });
-    }
-  } catch (e) {
-    res.status(500).json({ message: e.message, error: e.error });
-  }
+const userProfile = async (req, res, next) => {
+  await getInfo(res.locals.decodedData)
+    .then((response) => {
+      res.json(response)
+    }).catch((e) => {
+      res.status(stc(e)).json({ error: e.error, message: e.message });
+    });
 };
 
 module.exports = {
@@ -67,4 +76,5 @@ module.exports = {
   createUserFunc,
   loginFunc,
   authCreateUser,
+  userProfile,
 };
