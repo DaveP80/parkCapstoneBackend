@@ -13,14 +13,6 @@ const htmlContent = `
   </html>
 `;
 
-// const newUser = db.one(
-//   "INSERT INTO client_user (first_name, last_name, address, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING *"
-//   //[firstName, lastName, address, email, hashedPassword, auth_str]
-// );
-
-//let salt = await bcrypt.genSalt(10);
-
-//let hashedPassword = await bcrypt.hash(password, salt);
 const getAllUsers = async () => {
   try {
     const allUsers = await db.any("SELECT * FROM client_user");
@@ -32,7 +24,7 @@ const getAllUsers = async () => {
 };
 
 const createUser = async (data) => {
-  const { first_name, last_name, address, password, email } = data;
+  const { first_name, last_name, address, password, email, is_renter } = data;
   console.log(data);
 
   let salt = await bcrypt.genSalt(10);
@@ -48,8 +40,10 @@ const createUser = async (data) => {
     if (res[0]) {
       let jwtToken = jwt.sign(
         {
-          email: email,
-          password: hashedPassword,
+          first_name,
+          last_name,
+          email,
+          is_renter,
           id: res[0]["id"],
         },
         process.env.JWT_TOKEN_SECRET_KEY,
@@ -99,7 +93,7 @@ const createUser = async (data) => {
 
 const login = async (data) => {
   try {
-    const { email, password } = data;
+    const { email, password, } = data;
 
     const foundUser = await db.any(
       "SELECT * FROM client_user WHERE email = $1 and is_auth=true",
@@ -109,7 +103,8 @@ const login = async (data) => {
     if (foundUser.length === 0) {
       throw {
         message: "error",
-        error: "Invalid email credential",
+        error: "Invalid email address",
+        status: 401
       };
     } else {
       let user = foundUser[0];
@@ -118,9 +113,9 @@ const login = async (data) => {
 
       if (!comparedPassword) {
         throw {
-          message: "error",
+          message: "unauthorized",
           error: "Please check your email and password",
-          status: 500,
+          status: 401,
         };
       } else {
         let jwtToken = jwt.sign(
@@ -129,43 +124,100 @@ const login = async (data) => {
             email: user.email,
           },
           process.env.JWT_TOKEN_SECRET_KEY,
-          { expiresIn: "7d" }
+          { expiresIn: "15m" }
         );
 
-        return jwtToken;
+        let jwtTokenRefresh = jwt.sign(
+          {
+            id: user.id,
+            email: user.email,
+          },
+          process.env.JWT_TOKENREF_SECRET_KEY,
+          { expiresIn: "6M" }
+        );
+
+        return {tokens: [jwtToken, jwtTokenRefresh]};
       }
     }
   } catch (e) {
-    return e;
+    throw {
+      message: 'sql server error',
+      error: JSON.stringify(e),
+      status: 500
+    }
   }
 };
-
-const authLogin = async (data) => {
+//when a user clicks on email confirmation link
+const authLogin = async (id, is_renter) => {
   try {
-    const { email, password, id } = data;
-
     const auUser = await db.any(
-      "Update client_user set is_auth = true where id=$1 and password=$2 returning *",
-      [id, password]
+      "Update client_user set is_auth = true where id in (select id from client_user where id=$1 and is_auth=false) returning *",
+      id
     );
 
     if (auUser.length === 0) {
       throw {
-        message: "Invalid id and password",
-        error: `check id ${id} password ${password.slice(0, 10)}...`,
+        message: `Invalid id: ${id}`,
+        error: `check id for unauthenticated user`,
         status: 403,
       };
     } else {
-      return auUser[0];
+      let sqlArr = auUser[0];
+      if (is_renter) {
+        try {
+          const makeRenter = await db.any(
+            `insert into renter_user(renter_id, first_name, last_name, address, email) values ((select id from client_user where id = $1), (select first_name from client_user where first_name = $2 and id = $1), (select last_name from client_user where last_name = $3 and id = $1), $4, $5) returning *`,
+            [
+              sqlArr.id,
+              sqlArr.first_name,
+              sqlArr.last_name,
+              sqlArr.address,
+              sqlArr.email,
+            ]
+          );
+
+          sqlArr["renterInfo"] = makeRenter[0];
+        } catch (e) {
+          throw {
+            message: "Multi-status error on making renter entity",
+            error: JSON.stringify(e),
+            clientUser: sqlArr,
+            status: 207,
+          };
+        }
+      }
+      return sqlArr;
     }
   } catch (e) {
-    throw { message: "server error", error: JSON.stringify(e), status: 500 };
+    throw { message: "server error", error: e.name, status: 500 };
   }
 };
+
+const getInfo = async(args) => {
+  try {
+    const userJoin = await db.any(`select * from (select * from client_user where id=$1) c left join renter_user r on c.id = r.renter_id join auth_users on c.id = auth_users.user_id`, args.id)
+    if (userJoin.length === 0) {
+      throw {
+        message: "error",
+        error: "Invalid lookup id",
+        status: 401
+      };
+  } else {
+    return userJoin[0]
+  }
+} catch(e) {
+  throw {
+    error: e.name,
+    message: e.message,
+    status: 500
+  }
+}
+}
 
 module.exports = {
   getAllUsers,
   createUser,
   login,
   authLogin,
+  getInfo,
 };
