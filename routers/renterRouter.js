@@ -9,7 +9,7 @@ const {
   createUserFunc,
   authCreateUser,
   loginFunc,
-} = require("../controllers/userController");
+} = require("../controllers/authController");
 
 // const { authRenterMiddleware } = require("../lib/authMiddleware/jwtMiddleware");
 

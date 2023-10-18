@@ -30,8 +30,12 @@ CREATE TABLE renter_user (
     FOREIGN KEY (renter_id, first_name, last_name) REFERENCES client_user (id, first_name, last_name)
 );
 
-
+CREATE TABLE refresh_tokens (
+    client_id int not null,
+    token text unique
+);
 -- Create table in DATABASE FIRST. on each successful addition of new user to users table, new log is made in auth_users table
+-- is_auth becomes true after verified pay
 create table auth_users (user_id integer not null unique, user_email text not null unique, renter_email text, is_auth boolean default false not null, is_renter boolean default false not null, payment_verif boolean default false not null);
 
 CREATE OR REPLACE FUNCTION insert_auth_user()

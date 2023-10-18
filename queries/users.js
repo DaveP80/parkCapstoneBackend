@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db/dbConfig");
 const nodemailer = require("nodemailer");
+const { UserAlreadyExistsError, EmailHostError, SQLError, PasswordError, AuthError, MultiStatusError, TokenError, } = require("../lib/errorHandler/customErrors")
 
 const htmlContent = `
   <html>
@@ -32,6 +33,13 @@ const createUser = async (data) => {
   let hashedPassword = await bcrypt.hash(password, salt);
 
   try {
+    const checkLogs = await db.any(
+      `select * from auth_users where user_email=$1`,
+      email
+    );
+    if (checkLogs[0]) {
+      throw new UserAlreadyExistsError(`Cannot register with a previously used email: ${email}`);
+    }
     const res = await db.any(
       `insert into client_user(first_name, last_name, address, email, password) values ($1, $2, $3, $4, $5) returning *`,
       [first_name, last_name, address, email, hashedPassword]
@@ -65,7 +73,8 @@ const createUser = async (data) => {
         html: htmlContent
           .replace(
             "$(url)",
-            `http://localhost:3001/users/create-user/auth?k=${jwtToken}`
+            //`http://localhost:3001/users/create-user/auth?k=${jwtToken}`
+            `http://localhost:3000/confirmation?k=${jwtToken}`
           )
           .replace("$(firstName)", first_name)
           .replace("$(lastName)", last_name),
@@ -75,19 +84,12 @@ const createUser = async (data) => {
       console.log("Email sent:", info.response);
       return { message: `Email sent to ${email} successfully` };
     } else {
-      throw {
-        message: `Email host server error`,
-        error: "SMTP error",
-        status: 403,
-      };
+      throw new EmailHostError(`Email host server error`);
     }
   } catch (error) {
-    console.error("Error sending email:", error);
-    throw {
-      message: `User with email ${email} already exists.`,
-      error: "Pg error",
-      status: 409,
-    };
+    if (error instanceof UserAlreadyExistsError || error instanceof EmailHostError) {
+      throw error;
+    } else throw new UserAlreadyExistsError(`User with email ${email} already exists.`);
   }
 };
 
@@ -101,27 +103,19 @@ const login = async (data) => {
     );
 
     if (foundUser.length === 0) {
-      throw {
-        message: "error",
-        error: "Invalid email address",
-        status: 401
-      };
+      throw new PasswordError("Login Error", "Invalid email address")
     } else {
       let user = foundUser[0];
 
       let comparedPassword = await bcrypt.compare(password, user.password);
 
       if (!comparedPassword) {
-        throw {
-          message: "unauthorized",
-          error: "Please check your email and password",
-          status: 401,
-        };
+        throw new PasswordError("unauthorized", "Please check your email and password")
       } else {
         let jwtToken = jwt.sign(
           {
-            id: user.id,
-            email: user.email,
+           "id": user.id,
+            "email": user.email,
           },
           process.env.JWT_TOKEN_SECRET_KEY,
           { expiresIn: "15m" }
@@ -129,22 +123,21 @@ const login = async (data) => {
 
         let jwtTokenRefresh = jwt.sign(
           {
-            id: user.id,
-            email: user.email,
+            "id": user.id,
+            "email": user.email,
           },
           process.env.JWT_TOKENREF_SECRET_KEY,
           { expiresIn: "6M" }
         );
 
+        await db.any(`insert into refresh_tokens(client_id, token) values ($1, $2) returning *`, [user.id, jwtTokenRefresh])
+
         return {tokens: [jwtToken, jwtTokenRefresh]};
       }
     }
   } catch (e) {
-    throw {
-      message: 'sql server error',
-      error: JSON.stringify(e),
-      status: 500
-    }
+
+    throw new SQLError(e);
   }
 };
 //when a user clicks on email confirmation link
@@ -156,11 +149,7 @@ const authLogin = async (id, is_renter) => {
     );
 
     if (auUser.length === 0) {
-      throw {
-        message: `Invalid id: ${id}`,
-        error: `check id for unauthenticated user`,
-        status: 403,
-      };
+      throw new AuthError(`Invalid id: ${id}`);
     } else {
       let sqlArr = auUser[0];
       if (is_renter) {
@@ -178,34 +167,29 @@ const authLogin = async (id, is_renter) => {
 
           sqlArr["renterInfo"] = makeRenter[0];
         } catch (e) {
-          throw {
-            message: "Multi-status error on making renter entity",
-            error: JSON.stringify(e),
-            clientUser: sqlArr,
-            status: 207,
-          };
+          throw new MultiStatusError(JSON.stringify(e), sqlArr);
         }
       }
       return sqlArr;
     }
   } catch (e) {
-    throw { message: "server error", error: e.name, status: 500 };
+    if (e instanceof MultiStatusError || e instanceof AuthError) {
+      throw e;
+    } else throw { message: "server error", error: e.name, status: 500 };
   }
 };
 
 const getInfo = async(args) => {
   try {
-    const userJoin = await db.any(`select * from (select * from client_user where id=$1) c left join renter_user r on c.id = r.renter_id join auth_users on c.id = auth_users.user_id`, args.id)
+    const userJoin = await db.any(`select c.id, c.first_name, c.last_name, c.address clientAddress, c.email clientEmail, c.pmt_verified clientPmtVerify, r.address renterAddress, r.email renterEmail, r.background_verified renterBackground, r.pmt_verified renterPmtVerify, auth_users.is_auth from (select * from client_user where id=$1) c left join renter_user r on c.id = r.renter_id join auth_users on c.id = auth_users.user_id`, args)
     if (userJoin.length === 0) {
-      throw {
-        message: "error",
-        error: "Invalid lookup id",
-        status: 401
-      };
+      throw new TokenError("Invalid lookup id", "refresh token not found in db")
   } else {
     return userJoin[0]
   }
 } catch(e) {
+  if (e instanceof TokenError) throw e;
+  else;
   throw {
     error: e.name,
     message: e.message,

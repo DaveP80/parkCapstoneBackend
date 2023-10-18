@@ -5,21 +5,31 @@ const cookieParser = require('cookie-parser');
 const credentials = require('./lib/authMiddleware/credentials');
 const corsOptions = require('./config/corsOptions');
 
+const authRouter = require("./routers/authRouter");
 const userRouter = require("./routers/userRouter");
 const renterRouter = require("./routers/renterRouter");
 const pmtRouter = require("./routers/pmtRouter");
+const verifyJWT = require("./lib/authMiddleware/verifyJWT")
 const errorController = require("./controllers/errorController");
+const refreshTokenController = require("./controllers/refreshTokenController");
 const app = express();
 app.use(credentials);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: false }));
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-app.use("/users", userRouter);
+app.use("/refresh", refreshTokenController);
+
+app.use("/auth", authRouter);
+
+app.use(verifyJWT);
+
+app.use("/user", userRouter);
 
 app.use("/renters", renterRouter);
 
@@ -33,6 +43,6 @@ app.get("*", (req, res) => {
   res.status(404).send("Page not found!");
 });
 
-app.use(errorController);
+//app.use(errorController);
 
 module.exports = app;

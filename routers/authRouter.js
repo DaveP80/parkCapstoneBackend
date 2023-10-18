@@ -5,13 +5,19 @@ const validateData = require("../lib/validateData/validateData");
 const checkEmpty = require("../lib/checkEmpty/checkEmpty");
 
 const {        
-  userProfile,
-} = require("../controllers/userController");
+  createUserFunc,
+  authCreateUser,
+  loginFunc,
+} = require("../controllers/authController");
 
 const { authUserMiddleware, jwtMiddleware } = require("../lib/authMiddleware/jwtMiddleware");
 
 //router.get("/", jwtMiddleware, allGetUsersFunc);
 
-router.get("/profile", userProfile);
+router.get("/create-user/auth", authUserMiddleware, authCreateUser);
+
+router.post("/create-user", createUserFunc);
+
+router.post("/login", loginFunc);
 
 module.exports = router;
