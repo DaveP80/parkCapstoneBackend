@@ -4,14 +4,13 @@ const morgan = require("morgan");
 const cookieParser = require('cookie-parser');
 const credentials = require('./lib/authMiddleware/credentials');
 const corsOptions = require('./config/corsOptions');
-
 const authRouter = require("./routers/authRouter");
 const userRouter = require("./routers/userRouter");
 const renterRouter = require("./routers/renterRouter");
 const pmtRouter = require("./routers/pmtRouter");
 const verifyJWT = require("./lib/authMiddleware/verifyJWT")
-const errorController = require("./controllers/errorController");
 const refreshTokenController = require("./controllers/refreshTokenController");
+const logoutController = require("./controllers/logoutController");
 const app = express();
 app.use(credentials);
 app.use(cors(corsOptions));
@@ -24,6 +23,8 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use("/refresh", refreshTokenController);
+
+app.use("/logout", logoutController);
 
 app.use("/auth", authRouter);
 
@@ -42,7 +43,5 @@ app.get("/", (req, res) => {
 app.get("*", (req, res) => {
   res.status(404).send("Page not found!");
 });
-
-//app.use(errorController);
 
 module.exports = app;

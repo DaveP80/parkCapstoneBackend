@@ -9,7 +9,7 @@ const {
 const makeToken = async (data) => {
   try {
     let foundUser = await db.any(
-      `select * from refresh_tokens where token = $1`,
+      `with cte as(select * from refresh_tokens where token = $1) select c.*, r.renter_id from cte c left join renter_user r on c.client_id = r.renter_id`,
       data
     );
     if (foundUser?.length ==0)
@@ -32,7 +32,7 @@ const makeToken = async (data) => {
       process.env.JWT_TOKEN_SECRET_KEY,
       { expiresIn: "15m" }
     );
-    return { accessToken, };
+    return { accessToken, email, roles: [1, foundUser[0].renter_id ? 2 : 0] };
   } catch (error) {
     if (error instanceof TokenError || error instanceof RefreshError) {
       throw error;
