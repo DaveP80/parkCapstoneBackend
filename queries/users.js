@@ -2,7 +2,15 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db/dbConfig");
 const nodemailer = require("nodemailer");
-const { UserAlreadyExistsError, EmailHostError, SQLError, PasswordError, AuthError, MultiStatusError, TokenError, } = require("../lib/errorHandler/customErrors")
+const {
+  UserAlreadyExistsError,
+  EmailHostError,
+  SQLError,
+  PasswordError,
+  AuthError,
+  MultiStatusError,
+  TokenError,
+} = require("../lib/errorHandler/customErrors");
 
 const htmlContent = `
   <html>
@@ -38,7 +46,9 @@ const createUser = async (data) => {
       email
     );
     if (checkLogs[0]) {
-      throw new UserAlreadyExistsError(`Cannot register with a previously used email: ${email}`);
+      throw new UserAlreadyExistsError(
+        `Cannot register with a previously used email: ${email}`
+      );
     }
     const res = await db.any(
       `insert into client_user(first_name, last_name, address, email, password) values ($1, $2, $3, $4, $5) returning *`,
@@ -87,35 +97,44 @@ const createUser = async (data) => {
       throw new EmailHostError(`Email host server error`);
     }
   } catch (error) {
-    if (error instanceof UserAlreadyExistsError || error instanceof EmailHostError) {
+    if (
+      error instanceof UserAlreadyExistsError ||
+      error instanceof EmailHostError
+    ) {
       throw error;
-    } else throw new UserAlreadyExistsError(`User with email ${email} already exists.`);
+    } else
+      throw new UserAlreadyExistsError(
+        `User with email ${email} already exists.`
+      );
   }
 };
 
 const login = async (data) => {
   try {
-    const { email, password, } = data;
+    const { email, password } = data;
 
     const foundUser = await db.any(
-      "SELECT * FROM client_user WHERE email = $1 and is_auth=true",
+      "SELECT c.*, r.email renter_email FROM client_user c left join renter_user r on c.id = r.renter_id WHERE c.email = $1 and c.is_auth=true",
       email
     );
 
     if (foundUser.length === 0) {
-      throw new PasswordError("Login Error", "Invalid email address")
+      throw new PasswordError("Login Error", "Invalid email address");
     } else {
       let user = foundUser[0];
 
       let comparedPassword = await bcrypt.compare(password, user.password);
 
       if (!comparedPassword) {
-        throw new PasswordError("unauthorized", "Please check your email and password")
+        throw new PasswordError(
+          "unauthorized",
+          "Please check your email and password"
+        );
       } else {
         let jwtToken = jwt.sign(
           {
-           "id": user.id,
-            "email": user.email,
+            id: user.id,
+            email: user.email,
           },
           process.env.JWT_TOKEN_SECRET_KEY,
           { expiresIn: "15m" }
@@ -123,20 +142,22 @@ const login = async (data) => {
 
         let jwtTokenRefresh = jwt.sign(
           {
-            "id": user.id,
-            "email": user.email,
+            id: user.id,
+            email: user.email,
           },
           process.env.JWT_TOKENREF_SECRET_KEY,
-          { expiresIn: "6M" }
+          { expiresIn: 180 * 24 * 60 * 60 }
         );
 
-        await db.any(`insert into refresh_tokens(client_id, token) values ($1, $2) returning *`, [user.id, jwtTokenRefresh])
+        await db.any(
+          `insert into refresh_tokens(client_id, token) values ($1, $2) returning *`,
+          [user.id, jwtTokenRefresh]
+        );
 
-        return {tokens: [jwtToken, jwtTokenRefresh]};
+        return { accessToken: [jwtToken, jwtTokenRefresh], email, roles: [1, user.renter_email ? 2 : 0] };
       }
     }
   } catch (e) {
-
     throw new SQLError(e);
   }
 };
@@ -179,24 +200,32 @@ const authLogin = async (id, is_renter) => {
   }
 };
 
-const getInfo = async(args) => {
+const getInfo = async (args) => {
   try {
-    const userJoin = await db.any(`select c.id, c.first_name, c.last_name, c.address clientAddress, c.email clientEmail, c.pmt_verified clientPmtVerify, r.address renterAddress, r.email renterEmail, r.background_verified renterBackground, r.pmt_verified renterPmtVerify, auth_users.is_auth from (select * from client_user where id=$1) c left join renter_user r on c.id = r.renter_id join auth_users on c.id = auth_users.user_id`, args)
+    const userJoin = await db.any(
+      `select c.id, c.first_name, c.last_name, c.address clientAddress, c.email clientEmail, c.pmt_verified clientPmtVerify, r.address renterAddress, r.email renterEmail, r.background_verified renterBackground, r.pmt_verified renterPmtVerify, auth_users.is_auth from (select * from client_user where id=$1) c left join renter_user r on c.id = r.renter_id join auth_users on c.id = auth_users.user_id`,
+      args
+    );
     if (userJoin.length === 0) {
-      throw new TokenError("Invalid lookup id", "refresh token not found in db")
-  } else {
-    return userJoin[0]
+      throw new TokenError(
+        "Invalid lookup id",
+        "refresh token not found in db"
+      );
+    } else {
+      if (userJoin[0]['renteraddress']) userJoin[0]['roles'] = [1,2];
+      if (!userJoin[0]['renteraddress']) userJoin[0]['roles'] = [1];
+      return userJoin[0];
+    }
+  } catch (e) {
+    if (e instanceof TokenError) throw e;
+    else;
+    throw {
+      error: e.name,
+      message: e.message,
+      status: 500,
+    };
   }
-} catch(e) {
-  if (e instanceof TokenError) throw e;
-  else;
-  throw {
-    error: e.name,
-    message: e.message,
-    status: 500
-  }
-}
-}
+};
 
 module.exports = {
   getAllUsers,
