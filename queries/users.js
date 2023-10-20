@@ -114,7 +114,19 @@ const login = async (data) => {
     const { email, password } = data;
 
     const foundUser = await db.any(
-      "SELECT c.*, r.email renter_email FROM client_user c left join renter_user r on c.id = r.renter_id WHERE c.email = $1 and c.is_auth=true",
+      `select
+      c.*,
+      r.email renter_email,
+      au.is_auth bckgr_verify 
+    from
+      client_user c
+    left join renter_user r on
+      c.id = r.renter_id
+    left join auth_users au on
+      c.id = au.user_id
+    where
+      c.email = $1
+      and c.is_auth = true;`,
       email
     );
 
@@ -154,7 +166,7 @@ const login = async (data) => {
           [user.id, jwtTokenRefresh]
         );
 
-        return { accessToken: [jwtToken, jwtTokenRefresh], email, roles: [1, user.renter_email ? 2 : 0] };
+        return { accessToken: [jwtToken, jwtTokenRefresh], email, roles: [1, user.renter_email ? 2 : 0], bckgr_verify: user.bckgr_verify };
       }
     }
   } catch (e) {

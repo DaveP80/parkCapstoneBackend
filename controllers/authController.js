@@ -48,15 +48,19 @@ const authCreateUser = async (req, res, next) => {
 const loginFunc = async (req, res, next) => {
   await login(req.body)
     .then((response) => {
-      res.cookie('accessToken', response.accessToken[1], {
-        httpOnly: true,
-        secure: true,
-        maxAge: 170*24*60*60*1000,
-        sameSite: 'None'
-      }).json({
-        ...response, accessToken: response.accessToken[0]
+      res
+        .cookie("accessToken", response.accessToken[1], {
+          httpOnly: true,
+          secure: true,
+          maxAge: 170 * 24 * 60 * 60 * 1000,
+          sameSite: "None",
+        })
+        .json({
+          ...response,
+          accessToken: response.accessToken[0],
         });
-    }).catch((e) => {
+    })
+    .catch((e) => {
       res.status(stc(e)).json({ error: e.error, message: e.message });
     });
 };
