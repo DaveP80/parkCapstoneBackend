@@ -115,9 +115,18 @@ const login = async (data) => {
 
     const foundUser = await db.any(
       `select
-      c.*,
-      r.email renter_email,
-      au.is_auth bckgr_verify 
+      c.id,
+      c.first_name,
+      c.last_name,
+      c.address,
+      c.email,
+      c.pmt_verified,
+      c.password,
+      r.renter_address,
+      r.renter_email,
+      r.background_verified,
+      r.r_pmt_verified,
+      au.is_auth
     from
       client_user c
     left join renter_user r on
@@ -126,7 +135,7 @@ const login = async (data) => {
       c.id = au.user_id
     where
       c.email = $1
-      and c.is_auth = true;`,
+      and c.is_auth = true`,
       email
     );
 
@@ -166,7 +175,11 @@ const login = async (data) => {
           [user.id, jwtTokenRefresh]
         );
 
-        return { accessToken: [jwtToken, jwtTokenRefresh], email, roles: [1, user.renter_email ? 2 : 0], bckgr_verify: user.bckgr_verify };
+        return {
+          accessToken: [jwtToken, jwtTokenRefresh],
+          roles: [1, user.renter_email ? 2 : 0],
+          ...user,
+        };
       }
     }
   } catch (e) {
@@ -177,6 +190,7 @@ const login = async (data) => {
 const authLogin = async (id, is_renter) => {
   try {
     const auUser = await db.any(
+      //set client_user is_auth to true
       "Update client_user set is_auth = true where id in (select id from client_user where id=$1 and is_auth=false) returning *",
       id
     );
@@ -188,7 +202,7 @@ const authLogin = async (id, is_renter) => {
       if (is_renter) {
         try {
           const makeRenter = await db.any(
-            `insert into renter_user(renter_id, first_name, last_name, address, email) values ((select id from client_user where id = $1), (select first_name from client_user where first_name = $2 and id = $1), (select last_name from client_user where last_name = $3 and id = $1), $4, $5) returning *`,
+            `insert into renter_user(renter_id, first_name, last_name, renter_address, renter_email) values ((select id from client_user where id = $1), (select first_name from client_user where first_name = $2 and id = $1), (select last_name from client_user where last_name = $3 and id = $1), $4, $5) returning *`,
             [
               sqlArr.id,
               sqlArr.first_name,
@@ -211,11 +225,35 @@ const authLogin = async (id, is_renter) => {
     } else throw { message: "server error", error: e.name, status: 500 };
   }
 };
-
+//user profile information
 const getInfo = async (args) => {
   try {
     const userJoin = await db.any(
-      `select c.id, c.first_name, c.last_name, c.address clientAddress, c.email clientEmail, c.pmt_verified clientPmtVerify, r.address renterAddress, r.email renterEmail, r.background_verified renterBackground, r.pmt_verified renterPmtVerify, auth_users.is_auth from (select * from client_user where id=$1) c left join renter_user r on c.id = r.renter_id join auth_users on c.id = auth_users.user_id`,
+      `select
+      c.id,
+      c.first_name,
+      c.last_name,
+      c.address,
+      c.email,
+      c.pmt_verified,
+      c.password,
+      r.renter_address,
+      r.renter_email,
+      r.background_verified,
+      r.r_pmt_verified,
+      au.is_auth
+    from
+      (
+      select
+        *
+      from
+        client_user
+      where
+        id = $1) c
+    left join renter_user r on
+      c.id = r.renter_id
+    join auth_users au on
+      c.id = au.user_id`,
       args
     );
     if (userJoin.length === 0) {
@@ -224,8 +262,8 @@ const getInfo = async (args) => {
         "refresh token not found in db"
       );
     } else {
-      if (userJoin[0]['renteraddress']) userJoin[0]['roles'] = [1,2];
-      if (!userJoin[0]['renteraddress']) userJoin[0]['roles'] = [1];
+      if (userJoin[0]["renter_address"]) userJoin[0]["roles"] = [1, 2];
+      if (!userJoin[0]["renter_address"]) userJoin[0]["roles"] = [1];
       return userJoin[0];
     }
   } catch (e) {
@@ -239,10 +277,37 @@ const getInfo = async (args) => {
   }
 };
 
+const updateClientAddress = async (addr, id, role) => {
+  try {
+    const update = await db.any(
+      `update
+    client_user
+  set
+    address = $1
+  where
+    id = $2 returning *`,
+      [addr, id]
+    );
+    if (update.length == 0) throw new SQLError("Invalid client entry");
+    if (role==true) {
+      await db.any(
+        `update auth_users set is_auth = true where user_id = $1 returning *`,
+        update[0].id
+      );
+      return { message: `updated client address and is_auth` };
+    }
+    return { message: `updated client address, update renter_address` };
+  } catch (e) {
+    if (e instanceof SQLError) throw e;
+    else throw new SQLError("unable to update is_auth");
+  }
+};
+
 module.exports = {
   getAllUsers,
   createUser,
   login,
   authLogin,
   getInfo,
+  updateClientAddress,
 };
