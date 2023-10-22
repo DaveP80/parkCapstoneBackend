@@ -27,7 +27,7 @@ const createRenter = async (data) => {
 
   try {
     const res = await db.any(
-      `insert into renter_user(renter_id, first_name, last_name, email) values ((select id from client_user where id = $1), (select first_name from client_user where first
+      `insert into renter_user(renter_id, first_name, last_name, renter_email) values ((select id from client_user where id = $1), (select first_name from client_user where first
         _name = $2 and id = $1), (select last_name from client_user where last
             _name = $3 and id = $1), $4) returning *`,
       [id, first_name, last_name, email]
@@ -91,7 +91,7 @@ const login = async (data) => {
     const { email, password } = data;
 
     const foundUser = await db.any(
-      "SELECT * FROM client_user WHERE email = $1 and is_auth=true",
+      "SELECT * FROM renter_user WHERE id = $1",
       email
     );
 
