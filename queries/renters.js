@@ -13,14 +13,6 @@ const htmlContent = `
   </html>
 `;
 
-// const newUser = db.one(
-//   "INSERT INTO client_user (first_name, last_name, address, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING *"
-//   //[firstName, lastName, address, email, hashedPassword, auth_str]
-// );
-
-//let salt = await bcrypt.genSalt(10);
-
-//let hashedPassword = await bcrypt.hash(password, salt);
 const createRenter = async (data) => {
   const { id, first_name, last_name, email } = data;
   console.log(data);
@@ -150,8 +142,33 @@ const authLogin = async (id) => {
   }
 };
 
+const updateRenterAddress = async (addr, id) => {
+    try {
+      const update = await db.any(
+        `update
+      renter_user
+    set
+      renter_address = $1,
+      background_verified = true
+    where
+      renter_id = $2 returning *`,
+        [addr, id]
+      );
+      if (update.length == 0) throw new SQLError("Invalid renter entry");
+        await db.any(
+          `update auth_users set is_auth = true where user_id = $1 returning *`,
+          update[0].renter_id
+        );
+      return { message: `updated renter address`, verified: true };
+    } catch (e) {
+      if (e instanceof SQLError) throw e;
+      else throw new SQLError("unable to update is_auth");
+    }
+  };
+
 module.exports = {
   createRenter,
   login,
   authLogin,
+  updateRenterAddress,
 };

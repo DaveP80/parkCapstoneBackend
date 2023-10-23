@@ -3,8 +3,9 @@ const router = express.Router();
 
 const {        
   loginFunc,
-} = require("../controllers/authController");
+  renterAddressUpdate,
+} = require("../controllers/renterController");
 
-router.get("/profile", loginFunc);
+router.get("/update-address", renterAddressUpdate);
 
 module.exports = router;
