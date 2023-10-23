@@ -122,6 +122,7 @@ const login = async (data) => {
       c.email,
       c.pmt_verified,
       c.password,
+      c.client_background_verified,
       r.renter_address,
       r.renter_email,
       r.background_verified,
@@ -237,6 +238,7 @@ const getInfo = async (args) => {
       c.email,
       c.pmt_verified,
       c.password,
+      c.client_background_verified,
       r.renter_address,
       r.renter_email,
       r.background_verified,
@@ -283,7 +285,8 @@ const updateClientAddress = async (addr, id, role) => {
       `update
     client_user
   set
-    address = $1
+    address = $1,
+    client_background_verified = true
   where
     id = $2 returning *`,
       [addr, id]
@@ -294,7 +297,7 @@ const updateClientAddress = async (addr, id, role) => {
         `update auth_users set is_auth = true where user_id = $1 returning *`,
         update[0].id
       );
-      return { message: `updated client address and is_auth` };
+      return { message: `updated client address and is_auth`, verified: true };
     }
     return { message: `updated client address, update renter_address` };
   } catch (e) {

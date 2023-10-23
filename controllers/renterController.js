@@ -1,4 +1,4 @@
-const { createRenter, login, authLogin } = require("../queries/renters");
+const { createRenter, login, authLogin, updateRenterAddress } = require("../queries/renters");
 
 const { parsedMessage, stc } = require("../lib/helper/helper");
 
@@ -37,8 +37,19 @@ const loginFunc = async (req, res, next) => {
   }
 };
 
+const renterAddressUpdate = async (req, res, next) => {
+    await updateRenterAddress(req.body.address, req.user_id)
+      .then((response) => {
+        res.status(200).json(response);
+      })
+      .catch((e) => {
+        res.status(stc(e)).json({ error: e.error, message: e.message });
+      });
+  };
+
 module.exports = {
   createRenterFunc,
   loginFunc,
   authCreateRenter,
+  renterAddressUpdate,
 };

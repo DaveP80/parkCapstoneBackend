@@ -1,6 +1,7 @@
 --
 -- PostgreSQL database dump
 --
+SET client_encoding = 'UTF8';
 
 --
 -- Name: insert_auth_user(); Type: FUNCTION; Schema: public; Owner: cars_dx8r_user
@@ -52,6 +53,7 @@ CREATE TABLE public.client_user (
     password text NOT NULL,
     pmt_verified boolean DEFAULT false NOT NULL,
     is_auth boolean DEFAULT false NOT NULL,
+    client_background_verified boolean DEFAULT false NOT NULL,
     CONSTRAINT client_user_address_check CHECK ((length(address) > 8)),
     CONSTRAINT client_user_email_check CHECK ((length(email) > 5)),
     CONSTRAINT client_user_first_name_check CHECK ((length(first_name) > 1)),
@@ -103,12 +105,12 @@ CREATE TABLE public.renter_user (
     renter_id integer,
     first_name text,
     last_name text,
-    address text NOT NULL,
-    email text NOT NULL,
+    renter_address text NOT NULL,
+    renter_email text NOT NULL,
     background_verified boolean DEFAULT false NOT NULL,
-    pmt_verified boolean DEFAULT false NOT NULL,
-    CONSTRAINT renter_user_address_check CHECK ((length(address) > 8)),
-    CONSTRAINT renter_user_email_check CHECK ((length(email) > 5))
+    r_pmt_verified boolean DEFAULT false NOT NULL,
+    CONSTRAINT renter_user_address_check CHECK ((length(renter_address) > 8)),
+    CONSTRAINT renter_user_email_check CHECK ((length(renter_email) > 5))
 );
 
 
@@ -166,7 +168,7 @@ ALTER TABLE ONLY public.refresh_tokens
 --
 
 ALTER TABLE ONLY public.renter_user
-    ADD CONSTRAINT renter_user_address_key UNIQUE (address);
+    ADD CONSTRAINT renter_user_address_key UNIQUE (renter_address);
 
 
 --
@@ -174,7 +176,7 @@ ALTER TABLE ONLY public.renter_user
 --
 
 ALTER TABLE ONLY public.renter_user
-    ADD CONSTRAINT renter_user_email_key UNIQUE (email);
+    ADD CONSTRAINT renter_user_email_key UNIQUE (renter_email);
 
 
 --
@@ -190,7 +192,7 @@ ALTER TABLE ONLY public.client_user
 --
 
 ALTER TABLE ONLY public.renter_user
-    ADD CONSTRAINT unique_renter_user UNIQUE (first_name, last_name, address);
+    ADD CONSTRAINT unique_renter_user UNIQUE (first_name, last_name, renter_address);
 
 
 --
