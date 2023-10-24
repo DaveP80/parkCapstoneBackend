@@ -18,9 +18,11 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-}
+app.use(morgan("dev"));
+
+app.get("/", (req, res) => {
+  res.send("Welcome to Park App");
+});
 
 app.use("/refresh", refreshTokenController);
 
@@ -35,10 +37,6 @@ app.use("/user", userRouter);
 app.use("/renters", renterRouter);
 
 app.use("/checkout", pmtRouter);
-
-app.get("/", (req, res) => {
-  res.send("Welcome to Park App");
-});
 
 app.get("*", (req, res) => {
   res.status(404).send("Page not found!");
