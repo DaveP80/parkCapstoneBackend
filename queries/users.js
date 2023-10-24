@@ -83,8 +83,7 @@ const createUser = async (data) => {
         html: htmlContent
           .replace(
             "$(url)",
-            //`http://localhost:3001/users/create-user/auth?k=${jwtToken}`
-            `http://localhost:3000/confirmation?k=${jwtToken}`
+            process.env.NODE_ENV==='development' ? `http://localhost:3000/confirmation?k=${jwtToken}` : `https://incandescent-rabanadas-11bbf8.netlify.app/confirmation?k=${jwtToken}`
           )
           .replace("$(firstName)", first_name)
           .replace("$(lastName)", last_name),
