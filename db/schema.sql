@@ -1,17 +1,11 @@
 --
 -- PostgreSQL database dump
 --
-SET client_encoding = 'UTF8';
-
---
--- Name: insert_auth_user(); Type: FUNCTION; Schema: public; Owner: cars_dx8r_user
---
-
 CREATE FUNCTION public.insert_auth_user() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    INSERT INTO auth_users (user_id, user_email, is_auth)
+    INSERT INTO auth_users (user_id, user_email, all_is_auth)
     VALUES (NEW.id, NEW.email, false);
     RETURN NEW;
 END;
@@ -32,7 +26,7 @@ CREATE TABLE public.auth_users (
     user_id integer NOT NULL,
     user_email text NOT NULL,
     renter_email text,
-    is_auth boolean DEFAULT false NOT NULL,
+    all_is_auth boolean DEFAULT false NOT NULL,
     is_renter boolean DEFAULT false NOT NULL,
     payment_verif boolean DEFAULT false NOT NULL
 );
@@ -203,14 +197,8 @@ CREATE TRIGGER users_insert_trigger AFTER INSERT ON public.client_user FOR EACH 
 
 
 --
--- Name: renter_user renter_user_renter_id_first_name_last_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: renter_user rent_us_renter_id_first_last_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
 --
 
 ALTER TABLE ONLY public.renter_user
-    ADD CONSTRAINT renter_user_renter_id_first_name_last_name_fkey FOREIGN KEY (renter_id, first_name, last_name) REFERENCES public.client_user(id, first_name, last_name);
-
-
---
--- PostgreSQL database dump complete
---
-
+    ADD CONSTRAINT rent_us_renter_id_first_last_name_fkey FOREIGN KEY (renter_id, first_name, last_name) REFERENCES public.client_user(id, first_name, last_name) ON DELETE CASCADE;

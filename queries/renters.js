@@ -156,10 +156,10 @@ const updateRenterAddress = async (addr, id) => {
       );
       if (update.length == 0) throw new SQLError("Invalid renter entry");
         await db.any(
-          `update auth_users set is_auth = true where user_id = $1 returning *`,
+          `update auth_users set all_is_auth = true where user_id = $1 returning *`,
           update[0].renter_id
         );
-      return { message: `updated renter address`, verified: true };
+      return { message: `updated renter address`, verified: true, data: update[0] };
     } catch (e) {
       if (e instanceof SQLError) throw e;
       else throw new SQLError("unable to update is_auth");

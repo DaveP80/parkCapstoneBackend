@@ -6,6 +6,6 @@ const {
   renterAddressUpdate,
 } = require("../controllers/renterController");
 
-router.post("/update-address", renterAddressUpdate);
+router.put("/update-address", renterAddressUpdate);
 
 module.exports = router;

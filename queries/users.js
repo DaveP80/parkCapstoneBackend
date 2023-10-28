@@ -37,7 +37,6 @@ const getAllUsers = async () => {
 
 const createUser = async (data) => {
   const { first_name, last_name, address, password, email, is_renter } = data;
-  console.log(data);
 
   let salt = await bcrypt.genSalt(10);
 
@@ -131,7 +130,7 @@ const login = async (data) => {
       r.renter_email,
       r.background_verified,
       r.r_pmt_verified,
-      au.is_auth
+      au.all_is_auth
     from
       client_user c
     left join renter_user r on
@@ -196,7 +195,7 @@ const authLogin = async (id, is_renter) => {
   try {
     const auUser = await db.any(
       //set client_user is_auth to true
-      "Update client_user set is_auth = true where id in (select id from client_user where id=$1 and is_auth=false) returning *",
+      `Update client_user set is_auth = true where id in (select id from client_user where id=$1 and is_auth=false) returning *`,
       id
     );
 
@@ -317,11 +316,11 @@ const updateClientAddress = async (addr, id, role) => {
     if (update.length == 0) throw new SQLError("Invalid client entry");
     if (role == true) {
       await db.any(
-        `update auth_users set is_auth = true where user_id = $1 returning *`,
+        `update auth_users set all_is_auth = true where user_id = $1 returning *`,
         update[0].id
       );
-      return { message: `updated client address and is_auth`, verified: true };
-    } else return { message: `updated client address, update renter_address` };
+      return { message: `updated client address and is_auth`, verified: true, data: update[0] };
+    } else return { message: `updated client address, update renter_address`, data: update[0] };
   } catch (e) {
     if (e instanceof SQLError) throw e;
     else throw new SQLError("unable to update is_auth");

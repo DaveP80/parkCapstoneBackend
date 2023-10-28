@@ -30,7 +30,7 @@ const makeToken = async (data) => {
           r.renter_email,
           r.background_verified,
           r.r_pmt_verified,
-          au.is_auth
+          au.all_is_auth
         from
           cte c
         left join client_user cu on
