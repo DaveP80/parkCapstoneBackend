@@ -5,11 +5,40 @@ const {
   TokenError,
   RefreshError,
 } = require("../lib/errorHandler/customErrors");
+const { getRoles } = require("../lib/helper/helper")
 
 const makeToken = async (data) => {
   try {
     let foundUser = await db.any(
-      `with cte as(select * from refresh_tokens where token = $1) select c.client_id, r.renter_id from cte c left join renter_user r on c.client_id = r.renter_id`,
+      `with cte as(
+        select
+          *
+        from
+          refresh_tokens
+        where
+          token = $1)
+        select
+          c.client_id id,
+          cu.first_name,
+          cu.last_name,
+          cu.address,
+          cu.email,
+          cu.password,
+          cu.client_background_verified,
+          cu.pmt_verified,
+          r.renter_address,
+          r.renter_email,
+          r.background_verified,
+          r.r_pmt_verified,
+          au.is_auth
+        from
+          cte c
+        left join client_user cu on
+          c.client_id = cu.id
+        left join renter_user r on
+          c.client_id = r.renter_id
+        left join auth_users au on
+          cu.id = au.user_id`,
       data
     );
     if (foundUser?.length == 0)
@@ -20,7 +49,7 @@ const makeToken = async (data) => {
     let email = "";
     let id = -1;
     jwt.verify(data, process.env.JWT_TOKENREF_SECRET_KEY, (err, decoded) => {
-      if (err || foundUser[0].client_id !== decoded.id)
+      if (err || foundUser[0].id !== decoded.id)
         throw new RefreshError("Refresh Token Exp");
       email = decoded.email;
       id = decoded.id;
@@ -34,10 +63,9 @@ const makeToken = async (data) => {
       { expiresIn: "15m" }
     );
     return {
+      ...foundUser[0],
       accessToken,
-      email,
-      roles: [1, foundUser[0].renter_id ? 2 : 0],
-      id: foundUser[0].client_id,
+      roles: getRoles(foundUser[0]),
     };
   } catch (error) {
     if (error instanceof TokenError || error instanceof RefreshError) {

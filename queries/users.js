@@ -11,6 +11,9 @@ const {
   MultiStatusError,
   TokenError,
 } = require("../lib/errorHandler/customErrors");
+const {
+  getRoles
+} = require("../lib/helper/helper")
 
 const htmlContent = `
   <html>
@@ -83,7 +86,9 @@ const createUser = async (data) => {
         html: htmlContent
           .replace(
             "$(url)",
-            process.env.NODE_ENV==='development' ? `http://localhost:3000/confirmation?k=${jwtToken}` : `https://incandescent-rabanadas-11bbf8.netlify.app/confirmation?k=${jwtToken}`
+            process.env.NODE_ENV === "development"
+              ? `http://localhost:3000/confirmation?k=${jwtToken}`
+              : `https://incandescent-rabanadas-11bbf8.netlify.app/confirmation?k=${jwtToken}`
           )
           .replace("$(firstName)", first_name)
           .replace("$(lastName)", last_name),
@@ -177,7 +182,7 @@ const login = async (data) => {
 
         return {
           accessToken: [jwtToken, jwtTokenRefresh],
-          roles: [1, user.renter_email ? 2 : 0],
+          roles: getRoles(user),
           ...user,
         };
       }
@@ -263,9 +268,28 @@ const getInfo = async (args) => {
         "refresh token not found in db"
       );
     } else {
-      if (userJoin[0]["renter_address"]) userJoin[0]["roles"] = [1, 2];
-      if (!userJoin[0]["renter_address"]) userJoin[0]["roles"] = [1];
-      return userJoin[0];
+      if (userJoin[0]["renter_address"]) {
+        userJoin[0]["roles"] = {
+          Client: {
+            bckgr: userJoin[0]["client_background_verified"],
+            pmt: userJoin[0]["pmt_verified"],
+          },
+          Renter: {
+            bckgr: userJoin[0]["background_verified"],
+            pmt: userJoin[0]["r_pmt_verified"],
+          },
+        };
+      }
+      if (!userJoin[0]["renter_address"]) {
+        userJoin[0]["roles"] = {
+          Client: {
+            bckgr: userJoin[0]["client_background_verified"],
+            pmt: userJoin[0]["pmt_verified"],
+          },
+          ClientOnly: true,
+        };
+      }
+      return {...userJoin[0], roles: getRoles(userJoin[0])};
     }
   } catch (e) {
     if (e instanceof TokenError) throw e;
@@ -282,23 +306,22 @@ const updateClientAddress = async (addr, id, role) => {
   try {
     const update = await db.any(
       `update
-    client_user
-  set
-    address = $1,
-    client_background_verified = true
-  where
-    id = $2 returning *`,
+      client_user
+    set
+      address = $1,
+      client_background_verified = true
+    where
+      id = $2 returning *`,
       [addr, id]
     );
     if (update.length == 0) throw new SQLError("Invalid client entry");
-    if (role==true) {
+    if (role == true) {
       await db.any(
         `update auth_users set is_auth = true where user_id = $1 returning *`,
         update[0].id
       );
       return { message: `updated client address and is_auth`, verified: true };
-    }
-    return { message: `updated client address, update renter_address` };
+    } else return { message: `updated client address, update renter_address` };
   } catch (e) {
     if (e instanceof SQLError) throw e;
     else throw new SQLError("unable to update is_auth");
