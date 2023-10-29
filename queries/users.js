@@ -119,24 +119,16 @@ const login = async (data) => {
     const foundUser = await db.any(
       `select
       c.id,
-      c.first_name,
-      c.last_name,
-      c.address,
       c.email,
       c.pmt_verified,
       c.password,
       c.client_background_verified,
-      r.renter_address,
-      r.renter_email,
       r.background_verified,
-      r.r_pmt_verified,
-      au.all_is_auth
+      r.r_pmt_verified
     from
       client_user c
     left join renter_user r on
       c.id = r.renter_id
-    left join auth_users au on
-      c.id = au.user_id
     where
       c.email = $1
       and c.is_auth = true`,
@@ -181,8 +173,7 @@ const login = async (data) => {
 
         return {
           accessToken: [jwtToken, jwtTokenRefresh],
-          roles: getRoles(user),
-          ...user,
+          roles: getRoles(user)
         };
       }
     }
@@ -267,27 +258,6 @@ const getInfo = async (args) => {
         "refresh token not found in db"
       );
     } else {
-      if (userJoin[0]["renter_address"]) {
-        userJoin[0]["roles"] = {
-          Client: {
-            bckgr: userJoin[0]["client_background_verified"],
-            pmt: userJoin[0]["pmt_verified"],
-          },
-          Renter: {
-            bckgr: userJoin[0]["background_verified"],
-            pmt: userJoin[0]["r_pmt_verified"],
-          },
-        };
-      }
-      if (!userJoin[0]["renter_address"]) {
-        userJoin[0]["roles"] = {
-          Client: {
-            bckgr: userJoin[0]["client_background_verified"],
-            pmt: userJoin[0]["pmt_verified"],
-          },
-          ClientOnly: true,
-        };
-      }
       return {...userJoin[0], roles: getRoles(userJoin[0])};
     }
   } catch (e) {

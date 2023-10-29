@@ -19,26 +19,16 @@ const makeToken = async (data) => {
           token = $1)
         select
           c.client_id id,
-          cu.first_name,
-          cu.last_name,
-          cu.address,
-          cu.email,
-          cu.password,
           cu.client_background_verified,
           cu.pmt_verified,
-          r.renter_address,
-          r.renter_email,
           r.background_verified,
-          r.r_pmt_verified,
-          au.all_is_auth
+          r.r_pmt_verified
         from
           cte c
         left join client_user cu on
           c.client_id = cu.id
         left join renter_user r on
-          c.client_id = r.renter_id
-        left join auth_users au on
-          cu.id = au.user_id`,
+          c.client_id = r.renter_id`,
       data
     );
     if (foundUser?.length == 0)
@@ -63,7 +53,6 @@ const makeToken = async (data) => {
       { expiresIn: "15m" }
     );
     return {
-      ...foundUser[0],
       accessToken,
       roles: getRoles(foundUser[0]),
     };
