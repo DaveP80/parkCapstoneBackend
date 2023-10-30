@@ -14,7 +14,7 @@ const { authUserMiddleware, jwtMiddleware } = require("../lib/authMiddleware/jwt
 
 //router.get("/", jwtMiddleware, allGetUsersFunc);
 
-router.get("/create-user/auth", authUserMiddleware, authCreateUser);
+router.put("/create-user/auth", authUserMiddleware, authCreateUser);
 
 router.post("/create-user", createUserFunc);
 

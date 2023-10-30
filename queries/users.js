@@ -11,6 +11,7 @@ const {
   MultiStatusError,
   TokenError,
 } = require("../lib/errorHandler/customErrors");
+const { getRoles } = require("../lib/helper/helper");
 
 const htmlContent = `
   <html>
@@ -34,7 +35,6 @@ const getAllUsers = async () => {
 
 const createUser = async (data) => {
   const { first_name, last_name, address, password, email, is_renter } = data;
-  console.log(data);
 
   let salt = await bcrypt.genSalt(10);
 
@@ -83,7 +83,9 @@ const createUser = async (data) => {
         html: htmlContent
           .replace(
             "$(url)",
-            process.env.NODE_ENV==='development' ? `http://localhost:3000/confirmation?k=${jwtToken}` : `https://incandescent-rabanadas-11bbf8.netlify.app/confirmation?k=${jwtToken}`
+            process.env.NODE_ENV === "development"
+              ? `http://localhost:3000/confirmation?k=${jwtToken}`
+              : `https://incandescent-rabanadas-11bbf8.netlify.app/confirmation?k=${jwtToken}`
           )
           .replace("$(firstName)", first_name)
           .replace("$(lastName)", last_name),
@@ -115,24 +117,17 @@ const login = async (data) => {
     const foundUser = await db.any(
       `select
       c.id,
-      c.first_name,
-      c.last_name,
-      c.address,
       c.email,
       c.pmt_verified,
       c.password,
       c.client_background_verified,
       r.renter_address,
-      r.renter_email,
       r.background_verified,
-      r.r_pmt_verified,
-      au.is_auth
+      r.r_pmt_verified
     from
       client_user c
     left join renter_user r on
       c.id = r.renter_id
-    left join auth_users au on
-      c.id = au.user_id
     where
       c.email = $1
       and c.is_auth = true`,
@@ -177,8 +172,7 @@ const login = async (data) => {
 
         return {
           accessToken: [jwtToken, jwtTokenRefresh],
-          roles: [1, user.renter_email ? 2 : 0],
-          ...user,
+          roles: getRoles(user),
         };
       }
     }
@@ -191,7 +185,7 @@ const authLogin = async (id, is_renter) => {
   try {
     const auUser = await db.any(
       //set client_user is_auth to true
-      "Update client_user set is_auth = true where id in (select id from client_user where id=$1 and is_auth=false) returning *",
+      `Update client_user set is_auth = true where id in (select id from client_user where id=$1 and is_auth=false) returning *`,
       id
     );
 
@@ -202,11 +196,9 @@ const authLogin = async (id, is_renter) => {
       if (is_renter) {
         try {
           const makeRenter = await db.any(
-            `insert into renter_user(renter_id, first_name, last_name, renter_address, renter_email) values ((select id from client_user where id = $1), (select first_name from client_user where first_name = $2 and id = $1), (select last_name from client_user where last_name = $3 and id = $1), $4, $5) returning *`,
+            `insert into renter_user(renter_id, renter_address, renter_email) values ((select id from client_user where id = $1), $2, $3) returning *`,
             [
               sqlArr.id,
-              sqlArr.first_name,
-              sqlArr.last_name,
               sqlArr.address,
               sqlArr.email,
             ]
@@ -242,7 +234,7 @@ const getInfo = async (args) => {
       r.renter_email,
       r.background_verified,
       r.r_pmt_verified,
-      au.is_auth
+      au.all_is_auth
     from
       (
       select
@@ -263,9 +255,7 @@ const getInfo = async (args) => {
         "refresh token not found in db"
       );
     } else {
-      if (userJoin[0]["renter_address"]) userJoin[0]["roles"] = [1, 2];
-      if (!userJoin[0]["renter_address"]) userJoin[0]["roles"] = [1];
-      return userJoin[0];
+      return { ...userJoin[0], roles: getRoles(userJoin[0]) };
     }
   } catch (e) {
     if (e instanceof TokenError) throw e;
@@ -282,23 +272,30 @@ const updateClientAddress = async (addr, id, role) => {
   try {
     const update = await db.any(
       `update
-    client_user
-  set
-    address = $1,
-    client_background_verified = true
-  where
-    id = $2 returning *`,
+      client_user
+    set
+      address = $1,
+      client_background_verified = true
+    where
+      id = $2 returning *`,
       [addr, id]
     );
     if (update.length == 0) throw new SQLError("Invalid client entry");
-    if (role==true) {
+    if (role == true) {
       await db.any(
-        `update auth_users set is_auth = true where user_id = $1 returning *`,
+        `update auth_users set all_is_auth = true where user_id = $1 returning *`,
         update[0].id
       );
-      return { message: `updated client address and is_auth`, verified: true };
-    }
-    return { message: `updated client address, update renter_address` };
+      return {
+        message: `updated client address and all_is_auth`,
+        verified: true,
+        data: update[0],
+      };
+    } else
+      return {
+        message: `updated client address, update renter_address`,
+        data: update[0],
+      };
   } catch (e) {
     if (e instanceof SQLError) throw e;
     else throw new SQLError("unable to update is_auth");

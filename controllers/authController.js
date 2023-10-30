@@ -30,8 +30,7 @@ const createUserFunc = async (req, res, next) => {
 };
 //Endpoint for authenticating user after they click emaillink
 const authCreateUser = async (req, res, next) => {
-  const { first_name, last_name, email, id, is_renter } =
-    res.locals.decodedData;
+  const { id, is_renter } = req.decodedData;
   authLogin(id, is_renter)
     .then((response) => {
       res.status(201).json(response);
