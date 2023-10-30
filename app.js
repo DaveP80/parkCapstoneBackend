@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(morgan("dev"));
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Park App");
+  res.send("Welcome to NYC Park App");
 });
 
 app.use("/refresh", refreshTokenController);
