@@ -21,6 +21,7 @@ const makeToken = async (data) => {
           c.client_id id,
           cu.client_background_verified,
           cu.pmt_verified,
+          r.renter_address,
           r.background_verified,
           r.r_pmt_verified
         from

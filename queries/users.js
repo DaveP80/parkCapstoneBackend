@@ -11,9 +11,7 @@ const {
   MultiStatusError,
   TokenError,
 } = require("../lib/errorHandler/customErrors");
-const {
-  getRoles
-} = require("../lib/helper/helper")
+const { getRoles } = require("../lib/helper/helper");
 
 const htmlContent = `
   <html>
@@ -123,6 +121,7 @@ const login = async (data) => {
       c.pmt_verified,
       c.password,
       c.client_background_verified,
+      r.renter_address,
       r.background_verified,
       r.r_pmt_verified
     from
@@ -173,7 +172,7 @@ const login = async (data) => {
 
         return {
           accessToken: [jwtToken, jwtTokenRefresh],
-          roles: getRoles(user)
+          roles: getRoles(user),
         };
       }
     }
@@ -258,7 +257,7 @@ const getInfo = async (args) => {
         "refresh token not found in db"
       );
     } else {
-      return {...userJoin[0], roles: getRoles(userJoin[0])};
+      return { ...userJoin[0], roles: getRoles(userJoin[0]) };
     }
   } catch (e) {
     if (e instanceof TokenError) throw e;
@@ -289,8 +288,16 @@ const updateClientAddress = async (addr, id, role) => {
         `update auth_users set all_is_auth = true where user_id = $1 returning *`,
         update[0].id
       );
-      return { message: `updated client address and is_auth`, verified: true, data: update[0] };
-    } else return { message: `updated client address, update renter_address`, data: update[0] };
+      return {
+        message: `updated client address and is_auth`,
+        verified: true,
+        data: update[0],
+      };
+    } else
+      return {
+        message: `updated client address, update renter_address`,
+        data: update[0],
+      };
   } catch (e) {
     if (e instanceof SQLError) throw e;
     else throw new SQLError("unable to update is_auth");
