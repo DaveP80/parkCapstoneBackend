@@ -196,11 +196,9 @@ const authLogin = async (id, is_renter) => {
       if (is_renter) {
         try {
           const makeRenter = await db.any(
-            `insert into renter_user(renter_id, first_name, last_name, renter_address, renter_email) values ((select id from client_user where id = $1), (select first_name from client_user where first_name = $2 and id = $1), (select last_name from client_user where last_name = $3 and id = $1), $4, $5) returning *`,
+            `insert into renter_user(renter_id, renter_address, renter_email) values ((select id from client_user where id = $1), $2, $3) returning *`,
             [
               sqlArr.id,
-              sqlArr.first_name,
-              sqlArr.last_name,
               sqlArr.address,
               sqlArr.email,
             ]
@@ -289,7 +287,7 @@ const updateClientAddress = async (addr, id, role) => {
         update[0].id
       );
       return {
-        message: `updated client address and is_auth`,
+        message: `updated client address and all_is_auth`,
         verified: true,
         data: update[0],
       };

@@ -14,24 +14,22 @@ const htmlContent = `
 `;
 
 const createRenter = async (data) => {
-  const { id, first_name, last_name, email } = data;
+  const { id, email } = data;
   console.log(data);
 
   try {
     const res = await db.any(
-      `insert into renter_user(renter_id, first_name, last_name, renter_email) values ((select id from client_user where id = $1), (select first_name from client_user where first
-        _name = $2 and id = $1), (select last_name from client_user where last
-            _name = $3 and id = $1), $4) returning *`,
-      [id, first_name, last_name, email]
+      `insert into renter_user(renter_id, renter_address, renter_email) values ((select id from client_user where id = $1), (select address from client_user where id = $1), $2) returning *`,
+      [id, email]
     );
 
     if (res[0]) {
+      const renter_address = res[0]['renter_address'];
       let jwtToken = jwt.sign(
         {
-          first_name,
-          last_name,
+          renter_address,
           email,
-          id: res[0]["id"],
+          id: res[0]["renter_id"],
         },
         process.env.JWT_TOKEN_SECRET_KEY,
         { expiresIn: "7d" }
