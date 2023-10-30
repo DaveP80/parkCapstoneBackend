@@ -7,6 +7,7 @@ const htmlContent = `
   <html>
     <body>
       <h3>Hello, World!</h3>
+      <h2>Hello, World!</h2>
       $(firstName) $(lastName)
       <a href="$(url)" target="_blank">Confirm your Account</a>
     </body>
@@ -24,7 +25,7 @@ const createRenter = async (data) => {
     );
 
     if (res[0]) {
-      const renter_address = res[0]['renter_address'];
+      const renter_address = res[0]["renter_address"];
       let jwtToken = jwt.sign(
         {
           renter_address,
@@ -141,28 +142,32 @@ const authLogin = async (id) => {
 };
 
 const updateRenterAddress = async (addr, id) => {
-    try {
-      const update = await db.any(
-        `update
+  try {
+    const update = await db.any(
+      `update
       renter_user
     set
       renter_address = $1,
       background_verified = true
     where
       renter_id = $2 returning *`,
-        [addr, id]
-      );
-      if (update.length == 0) throw new SQLError("Invalid renter entry");
-        await db.any(
-          `update auth_users set all_is_auth = true where user_id = $1 returning *`,
-          update[0].renter_id
-        );
-      return { message: `updated renter address`, verified: true, data: update[0] };
-    } catch (e) {
-      if (e instanceof SQLError) throw e;
-      else throw new SQLError("unable to update is_auth");
-    }
-  };
+      [addr, id]
+    );
+    if (update.length == 0) throw new SQLError("Invalid renter entry");
+    await db.any(
+      `update auth_users set all_is_auth = true where user_id = $1 returning *`,
+      update[0].renter_id
+    );
+    return {
+      message: `updated renter address`,
+      verified: true,
+      data: update[0],
+    };
+  } catch (e) {
+    if (e instanceof SQLError) throw e;
+    else throw new SQLError("unable to update is_auth");
+  }
+};
 
 module.exports = {
   createRenter,
