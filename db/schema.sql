@@ -87,23 +87,24 @@ CREATE TABLE public.renter_user (
 -- public.parking_spaces definition
 
 CREATE TABLE public.parking_spaces (
-	space_id serial4 NOT NULL,
-	space_owner_id int4 NOT NULL,
-	property_lookup_id uuid NULL,
-	space_no int4 NULL,
-	sp_type text NULL,
-	occupied bool NOT NULL DEFAULT false,
-	last_used timestamptz NULL,
-	customer_id int4 NOT NULL DEFAULT '-1'::integer,
-	price float8 NOT NULL DEFAULT 15.00,
-	CONSTRAINT parking_spaces_check CHECK ((customer_id <> space_owner_id)),
-	CONSTRAINT parking_spaces_last_used_check CHECK ((last_used <= now())),
-	CONSTRAINT parking_spaces_pkey PRIMARY KEY (space_id),
-	CONSTRAINT parking_spaces_sp_type_check CHECK ((sp_type = ANY (ARRAY['car'::text, 'truck'::text]))),
-	CONSTRAINT parking_spaces_space_no_check CHECK (((space_no >= 1) AND (space_no <= 10))),
-	CONSTRAINT unique_space_id_no UNIQUE (space_id, space_no),
-	CONSTRAINT fk_space_owner FOREIGN KEY (space_owner_id) REFERENCES public.client_user(id),
-	CONSTRAINT fk_space_property_id FOREIGN KEY (property_lookup_id) REFERENCES public.properties(property_id)
+    space_id serial4 NOT NULL,
+    space_owner_id int4 NOT NULL,
+    property_lookup_id uuid NULL,
+    space_no int4 NULL,
+    sp_type text NULL,
+    occupied bool NOT NULL DEFAULT false,
+    last_used timestamptz NULL,
+    customer_id int4 NOT NULL DEFAULT '-1'::integer,
+    price float8 NOT NULL DEFAULT 15.00,
+    address text NULL,  -- Add the "address" field
+    CONSTRAINT parking_spaces_check CHECK ((customer_id <> space_owner_id)),
+    CONSTRAINT parking_spaces_last_used_check CHECK ((last_used <= now())),
+    CONSTRAINT parking_spaces_pkey PRIMARY KEY (space_id),
+    CONSTRAINT parking_spaces_sp_type_check CHECK ((sp_type = ANY (ARRAY['car'::text, 'truck'::text]))),
+    CONSTRAINT parking_spaces_space_no_check CHECK (((space_no >= 1) AND (space_no <= 10))),
+    CONSTRAINT unique_space_id_no UNIQUE (space_id, space_no),
+    CONSTRAINT fk_space_owner FOREIGN KEY (space_owner_id) REFERENCES public.client_user(id),
+    CONSTRAINT fk_space_property_id FOREIGN KEY (property_lookup_id) REFERENCES public.properties(property_id)
 );
 
 
