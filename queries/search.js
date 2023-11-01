@@ -1,5 +1,9 @@
 const db = require("../db/dbConfig");
 
+const {
+    removeZipCode
+} = require("../lib/helper/helper")
+
 const { SQLSpaceTableError } = require("../lib/errorHandler/customErrors");
 
 const getAll = async () => {
@@ -25,6 +29,8 @@ join properties p on
 };
 
 const byAddr = async (addr) => {
+
+    [addr, zip] = removeZipCode(addr)
   try {
     const results = await db.any(
       `
@@ -47,8 +53,14 @@ const byAddr = async (addr) => {
       where
           LENGTH(t.sub) = 3
               and t.sub ilike $1) >= 1`,
-      addr.replaceAll("%20", " ")
+      addr
     );
+
+    if (!results?.length && zip?.length>0) {
+        console.log('hello');
+        results.push({ zip: zip[0] })
+        return  results
+    }
 
     return results;
   } catch (e) {
@@ -94,7 +106,7 @@ const byZip = async (zip) => {
       `
           select
           ps.*,
-          pr.prop_address
+          pr.prop_address,
           pr.zip
       from
           parking_spaces ps

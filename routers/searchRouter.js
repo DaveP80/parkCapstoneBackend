@@ -10,13 +10,13 @@ const {
 
 const getAllSpaces = require("../controllers/heroController")
 
-router.get("/city/c/:city", getSpaceByCity);
+router.post("/city/c", getSpaceByCity);
 
-router.get("/address/a/:addr", getSpaceByAddr);
+router.post("/address/a", getSpaceByAddr);
 
-router.get("/zip/z/:zip", getSpaceByZip);
+router.post("/zip/z", getSpaceByZip);
 
-router.get("/is/occupied/:B/o/:city", getSpaceByIsOccupied);
+router.post("/is/occupied/:B/o", getSpaceByIsOccupied);
 
 router.get("/", getAllSpaces);
 

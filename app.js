@@ -9,6 +9,7 @@ const userRouter = require("./routers/userRouter");
 const renterRouter = require("./routers/renterRouter");
 const searchRouter = require("./routers/searchRouter");
 const pmtRouter = require("./routers/pmtRouter");
+const mapsRouter = require("./routers/mapsRouter");
 const verifyJWT = require("./lib/authMiddleware/verifyJWT")
 const refreshTokenController = require("./controllers/refreshTokenController");
 const logoutController = require("./controllers/logoutController");
@@ -40,6 +41,8 @@ app.use("/user", userRouter);
 app.use("/renters", renterRouter);
 
 app.use("/checkout", pmtRouter);
+
+app.use("/maps", mapsRouter);
 
 app.get("*", (req, res) => {
   res.status(404).send("Page not found!");
