@@ -1,13 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-const cookieParser = require('cookie-parser');
-const credentials = require('./lib/authMiddleware/credentials');
-const corsOptions = require('./config/corsOptions');
+const cookieParser = require("cookie-parser");
+const credentials = require("./lib/authMiddleware/credentials");
+const corsOptions = require("./config/corsOptions");
 const authRouter = require("./routers/authRouter");
 const userRouter = require("./routers/userRouter");
 const renterRouter = require("./routers/renterRouter");
 const searchRouter = require("./routers/searchRouter");
+const parkingSpotRouter = require("./routers/parkingSpotRouter");
 const pmtRouter = require("./routers/pmtRouter");
 const mapsRouter = require("./routers/mapsRouter");
 const verifyJWT = require("./lib/authMiddleware/verifyJWT")
@@ -33,6 +34,8 @@ app.use("/logout", logoutController);
 app.use("/auth", authRouter);
 
 app.use("/get-spaces", searchRouter);
+
+app.use("/parking-spots", parkingSpotRouter);
 
 app.use(verifyJWT);
 
