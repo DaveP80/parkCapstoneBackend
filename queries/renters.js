@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db/dbConfig");
 const nodemailer = require("nodemailer");
+const { SQLError } = require("../lib/errorHandler/customErrors");
 
 const htmlContent = `
   <html>
@@ -77,44 +78,10 @@ const createRenter = async (data) => {
   }
 };
 
-const login = async (data) => {
+const getPropInfo = async (data) => {
   try {
-    const { email, password } = data;
-
-    const foundUser = await db.any(
-      "SELECT * FROM renter_user WHERE id = $1",
-      email
-    );
-
-    if (foundUser.length === 0) {
-      throw {
-        message: "error",
-        error: "Invalid email address",
-      };
-    } else {
-      let user = foundUser[0];
-
-      let comparedPassword = await bcrypt.compare(password, user.password);
-
-      if (!comparedPassword) {
-        throw {
-          message: "error",
-          error: "Please check your email and password",
-          status: 500,
-        };
-      } else {
-        let jwtToken = jwt.sign(
-          {
-            id: user.id,
-            email: user.email,
-          },
-          process.env.JWT_TOKEN_SECRET_KEY,
-          { expiresIn: "7d" }
-        );
-
-        return jwtToken;
-      }
-    }
+    const results = await db.any(`select * from properties where owner_id = $1`, data);
+    return results;
   } catch (e) {
     return e;
   }
@@ -138,6 +105,35 @@ const authLogin = async (id) => {
     }
   } catch (e) {
     throw { message: "server error", error: JSON.stringify(e), status: 500 };
+  }
+};
+
+const createProperty = async (body) => {
+  try {
+    const update = await db.any(
+      `insert
+        into
+        properties (owner_id,
+        prop_address,
+        zip,
+        number_spaces,
+        billing_type,
+        picture
+        )
+      values ($1, $2, $3, $4, $5, $6) returning *`,
+      [
+        body.owner_id,
+        body.prop_address,
+        body.zip,
+        body.number_spaces,
+        body.billing_type,
+        body.picture,
+      ]
+    );
+    if (update?.length == 0) throw new SQLError("Invalid form entry");
+    return update[0];
+  } catch (e) {
+    return e;
   }
 };
 
@@ -171,7 +167,8 @@ const updateRenterAddress = async (addr, id) => {
 
 module.exports = {
   createRenter,
-  login,
+  createProperty,
+  getPropInfo,
   authLogin,
   updateRenterAddress,
 };

@@ -7,9 +7,11 @@ const corsOptions = require("./config/corsOptions");
 const authRouter = require("./routers/authRouter");
 const userRouter = require("./routers/userRouter");
 const renterRouter = require("./routers/renterRouter");
+const searchRouter = require("./routers/searchRouter");
 const parkingSpotRouter = require("./routers/parkingSpotRouter");
 const pmtRouter = require("./routers/pmtRouter");
-const verifyJWT = require("./lib/authMiddleware/verifyJWT");
+const mapsRouter = require("./routers/mapsRouter");
+const verifyJWT = require("./lib/authMiddleware/verifyJWT")
 const refreshTokenController = require("./controllers/refreshTokenController");
 const logoutController = require("./controllers/logoutController");
 const app = express();
@@ -31,6 +33,8 @@ app.use("/logout", logoutController);
 
 app.use("/auth", authRouter);
 
+app.use("/get-spaces", searchRouter);
+
 app.use("/parking-spots", parkingSpotRouter);
 
 app.use(verifyJWT);
@@ -40,6 +44,8 @@ app.use("/user", userRouter);
 app.use("/renters", renterRouter);
 
 app.use("/checkout", pmtRouter);
+
+app.use("/maps", mapsRouter);
 
 app.get("*", (req, res) => {
   res.status(404).send("Page not found!");

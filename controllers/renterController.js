@@ -1,4 +1,9 @@
-const { createRenter, login, authLogin, updateRenterAddress } = require("../queries/renters");
+const {
+  createRenter,
+  createProperty,
+  getPropInfo,
+  updateRenterAddress,
+} = require("../queries/renters");
 
 const { parsedMessage, stc } = require("../lib/helper/helper");
 
@@ -11,45 +16,43 @@ const createRenterFunc = async (req, res, next) => {
       res.status(stc(e)).json({ message: e.message, error: e.error });
     });
 };
-//Endpoint for authenticating user after they click emaillink
-const authCreateRenter = async (req, res, next) => {
-  const { first_name, last_name, email, id } = res.locals.decodedToken;
-  authLogin(id)
+
+const createNewProperty = async (req, res, next) => {
+  createProperty(req.body)
     .then((response) => {
-      res.status(201).json(response);
+      res.json(response);
+    })
+    .catch((e) => {
+      res.status(stc(e)).json({ message: e.message, error: e.error });
+    });
+};
+//Endpoint for authenticating user after they click emaillink
+const authCreateRenter = async (req, res, next) => {};
+
+const getPropertyInfo = async (req, res, next) => {
+  await getPropInfo(req.user_id)
+    .then((response) => {
+      res.status(200).json(response);
     })
     .catch((e) => {
       res.status(stc(e)).json({ message: e.message, error: e.error });
     });
 };
 
-const loginFunc = async (req, res, next) => {
-  try {
-    const foundRenter = await login(req.body);
-
-    if (foundRenter.status === 500) {
-      throw foundRenter;
-    } else {
-      res.json({ accessToken: foundRenter });
-    }
-  } catch (e) {
-    res.status(500).json({ error: e.error });
-  }
-};
-
 const renterAddressUpdate = async (req, res, next) => {
-    await updateRenterAddress(req.body.address, req.user_id)
-      .then((response) => {
-        res.status(200).json(response);
-      })
-      .catch((e) => {
-        res.status(stc(e)).json({ error: e.error, message: e.message });
-      });
-  };
+  await updateRenterAddress(req.body.address, req.user_id)
+    .then((response) => {
+      res.status(200).json(response);
+    })
+    .catch((e) => {
+      res.status(stc(e)).json({ error: e.error, message: e.message });
+    });
+};
 
 module.exports = {
   createRenterFunc,
-  loginFunc,
+  createNewProperty,
+  getPropertyInfo,
   authCreateRenter,
   renterAddressUpdate,
 };
