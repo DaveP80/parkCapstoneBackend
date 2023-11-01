@@ -7,6 +7,7 @@ const corsOptions = require('./config/corsOptions');
 const authRouter = require("./routers/authRouter");
 const userRouter = require("./routers/userRouter");
 const renterRouter = require("./routers/renterRouter");
+const searchRouter = require("./routers/searchRouter");
 const pmtRouter = require("./routers/pmtRouter");
 const verifyJWT = require("./lib/authMiddleware/verifyJWT")
 const refreshTokenController = require("./controllers/refreshTokenController");
@@ -29,6 +30,8 @@ app.use("/refresh", refreshTokenController);
 app.use("/logout", logoutController);
 
 app.use("/auth", authRouter);
+
+app.use("/get-spaces", searchRouter);
 
 app.use(verifyJWT);
 
