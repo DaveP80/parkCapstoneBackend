@@ -1,8 +1,9 @@
 const db = require("../db/dbConfig");
 
 const {
-    removeZipCode
-} = require("../lib/helper/helper")
+  removeZipCode,
+  splitStringIntoSubstrings,
+} = require("../lib/helper/helper");
 
 const { SQLSpaceTableError } = require("../lib/errorHandler/customErrors");
 
@@ -29,37 +30,35 @@ join properties p on
 };
 
 const byAddr = async (addr) => {
+  [addr, zip] = removeZipCode(addr);
+  let termsarr = addr;
+  let substrings = splitStringIntoSubstrings(termsarr);
+  console.log(substrings);
+  const ilikeConditions = substrings.map(
+    (term) => `pr.prop_address ILIKE '%${term}%'`
+  );
 
-    [addr, zip] = removeZipCode(addr)
-  try {
-    const results = await db.any(
-      `
-      select
+  const ilikeClause = ilikeConditions.join(" OR ");
+
+  const query = `
+    SELECT
       ps.*,
       pr.prop_address,
       pr.zip
-  from
+    FROM
       parking_spaces ps
-  join properties pr on
-      ps.property_lookup_id = pr.property_id
-  where
-      pr.prop_address ilike '%' || $1 || '%'
-      and (
-      select
-          COUNT(*)
-      from
-          regexp_split_to_table(pr.prop_address,
-          ' ') as t(sub)
-      where
-          LENGTH(t.sub) = 3
-              and t.sub ilike $1) >= 1`,
-      addr
-    );
+    JOIN
+      properties pr ON ps.property_lookup_id = pr.property_id
+    WHERE
+      ${ilikeClause};`;
 
-    if (!results?.length && zip?.length>0) {
-        console.log('hello');
-        results.push({ zip: zip[0] })
-        return  results
+  try {
+    console.log(query);
+    const results = await db.any(query);
+
+    if (!results?.length && zip?.length > 0) {
+      results.push({ zip: zip[0] });
+      return results;
     }
 
     return results;
@@ -147,7 +146,7 @@ const byOccupied = async (args) => {
 
 const getSpace = async (args) => {
   try {
-return {};
+    return {};
   } catch (e) {
     return new SQLSpaceTableError(e);
   }
