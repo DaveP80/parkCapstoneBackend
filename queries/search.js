@@ -33,10 +33,9 @@ const byAddr = async (addr) => {
   [addr, zip] = removeZipCode(addr);
   let termsarr = addr;
   let substrings = splitStringIntoSubstrings(termsarr);
-  console.log(substrings);
   const ilikeConditions = substrings.map(
     (term) => `pr.prop_address ILIKE '%${term}%'`
-  );
+  ); 
 
   const ilikeClause = ilikeConditions.join(" OR ");
 
@@ -49,11 +48,9 @@ const byAddr = async (addr) => {
       parking_spaces ps
     JOIN
       properties pr ON ps.property_lookup_id = pr.property_id
-    WHERE
-      ${ilikeClause};`;
+    WHERE ${ilikeClause}`;
 
   try {
-    console.log(query);
     const results = await db.any(query);
 
     if (!results?.length && zip?.length > 0) {
