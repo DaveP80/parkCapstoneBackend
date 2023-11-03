@@ -118,9 +118,10 @@ const createProperty = async (body) => {
         zip,
         number_spaces,
         billing_type,
-        picture
+        picture,
+        location_verified
         )
-      values ($1, $2, $3, $4, $5, $6) returning *`,
+      values ($1, $2, $3, $4, $5, $6, true) returning *`,
       [
         body.owner_id,
         body.prop_address,

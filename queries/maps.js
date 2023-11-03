@@ -4,7 +4,7 @@ const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
 const verifyLocationAddr = async(addressToVerify) => {
     
-    axios
+    let response = await axios
       .get('https://maps.googleapis.com/maps/api/geocode/json', {
         params: {
           address: addressToVerify,
@@ -13,6 +13,7 @@ const verifyLocationAddr = async(addressToVerify) => {
       })
       .then((response) => {
         const results = response.data.results;
+        console.log(results);
     
         if (results.length > 0) {
 

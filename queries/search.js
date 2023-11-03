@@ -5,7 +5,7 @@ const {
   splitStringIntoSubstrings,
 } = require("../lib/helper/helper");
 
-const { SQLSpaceTableError } = require("../lib/errorHandler/customErrors");
+const { SQLSpaceTableError, SQLError } = require("../lib/errorHandler/customErrors");
 
 const getAll = async () => {
   try {
@@ -43,12 +43,13 @@ const byAddr = async (addr) => {
     SELECT
       ps.*,
       pr.prop_address,
-      pr.zip
+      pr.zip,
+      pr.billing_type
     FROM
       parking_spaces ps
     JOIN
       properties pr ON ps.property_lookup_id = pr.property_id
-    WHERE ${ilikeClause}`;
+    WHERE ${ilikeClause} and pr.location_verified = true`;
 
   try {
     const results = await db.any(query);
@@ -60,7 +61,51 @@ const byAddr = async (addr) => {
 
     return results;
   } catch (e) {
-    return new SQLSpaceTableError(e);
+    throw new SQLSpaceTableError(e);
+  }
+};
+
+const byAddrB = async (addr) => {
+  [addr, zip] = removeZipCode(addr);
+  let termsarr = addr;
+  let substrings = splitStringIntoSubstrings(termsarr);
+
+  try {
+    const results = await db.any(`Select ps.*, pr.prop_address, pr.zip, pr.billing_type from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true`);
+    if (!results?.length) {
+      throw new SQLError("no data in spaces table")
+    }
+
+    let emptarray = [];
+    
+    let resultarr = [];
+    
+    let stringset = {};
+    
+    for (let s of substrings) {
+      for (let o of results) {
+        if (o.prop_address.includes(s)) {
+          stringset[o.space_id] = (stringset[o.space_id] || 0) + 1;
+        }
+      }
+    }
+    if (Object.keys(stringset)?.length==0 && zip?.length > 0) {
+      emptarray.push({ zip: zip[0] });
+      return emptarray;
+    }
+    
+    for (let g of results) {
+      if (stringset.hasOwnProperty(g.space_id)) {
+        resultarr.push({ num: stringset[g.space_id], ...g});
+      }
+    }
+
+    resultarr.sort((a,b) => b.num - a.num);
+
+    return resultarr;
+  } catch (e) {
+    if (e instanceof SQLError) throw e;
+    throw new SQLSpaceTableError(e);
   }
 };
 
@@ -153,6 +198,7 @@ module.exports = {
   getAll,
   getSpace,
   byAddr,
+  byAddrB,
   byCity,
   byZip,
   byOccupied,

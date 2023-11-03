@@ -1,18 +1,31 @@
-const {
-    verifyLocationAddr,
-  } = require("../queries/maps");
-  
-  const verifyAddressFromForm = async (req, res, next) => {
+const axios = require("axios");
+const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
-    verifyLocationAddr(req.body.addr)
-      .then((response) => {
-        res.status(200).json(response);
-      })
-      .catch((e) => {
-        res.status(stc(e)).json({ error: e.error });
-      });
-  };
+const verifyAddressFromForm = async (req, res, next) => {
+  try {
+    const response = await axios.get(
+      "https://maps.googleapis.com/maps/api/geocode/json",
+      {
+        params: {
+          address: req.body.address,
+          key: apiKey,
+        },
+      }
+    );
 
-  module.exports = {
-    verifyAddressFromForm,
-  };  
+    if (!response?.data?.results) {
+      res.json({ confirm: false, formattedAddress: null });
+    }
+
+    else if (response?.data?.results[0]?.address_components?.some(item => item?.types?.includes("postal_code"))) {
+      res.json({ confirm: true, formattedAddress: response?.data?.results[0]?.formatted_address})
+    }
+
+   else res.json({ confirm: false, formattedAddress: null });
+  } catch (e) {
+    res.json({ message: "error on fetching google maps API", error: e.error });
+  }
+};
+module.exports = {
+  verifyAddressFromForm,
+};
