@@ -3,6 +3,7 @@ const router = express.Router();
 
 const {
   getSpaceByAddr,
+  getSpaceByAddrB,
   getSpaceByCity,
   getSpaceByZip,
   getSpaceByIsOccupied,
@@ -13,6 +14,8 @@ const getAllSpaces = require("../controllers/heroController")
 router.post("/city/c", getSpaceByCity);
 
 router.post("/address/a", getSpaceByAddr);
+
+router.post("/address/b", getSpaceByAddrB);
 
 router.post("/zip/z", getSpaceByZip);
 

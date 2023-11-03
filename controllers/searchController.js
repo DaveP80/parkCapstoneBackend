@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { byAddr, byCity, byZip, byOccupied } = require("../queries/search");
+const { byAddr, byAddrB, byCity, byZip, byOccupied } = require("../queries/search");
 
 const { stc } = require("../lib/helper/helper");
 
@@ -8,6 +8,26 @@ const getSpaceByAddr = async (req, res) => {
 
   try {
     const response = await byAddr(addr);
+
+    if (response[0]?.zip) {
+      const postResponse = await axios.post(
+        `${process.env.NODE_URI}/get-spaces/zip/z`,
+        response[0]
+      );
+      res.json(postResponse.data);
+    } else {
+      res.json(response);
+    }
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.error, message: e.message });
+  }
+};
+
+const getSpaceByAddrB = async (req, res) => {
+  const addr = req.body.addr;
+
+  try {
+    const response = await byAddrB(addr);
 
     if (response[0]?.zip) {
       const postResponse = await axios.post(
@@ -59,6 +79,7 @@ const getSpaceByIsOccupied = async (req, res) => {
 
 module.exports = {
   getSpaceByAddr,
+  getSpaceByAddrB,
   getSpaceByCity,
   getSpaceByZip,
   getSpaceByIsOccupied,
