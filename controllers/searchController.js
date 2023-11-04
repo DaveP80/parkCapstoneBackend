@@ -9,10 +9,10 @@ const getSpaceByAddr = async (req, res) => {
   try {
     const response = await byAddr(addr);
 
-    if (response[0]?.zip) {
+    if (response[0]?.requery) {
       const postResponse = await axios.post(
         `${process.env.NODE_URI}/get-spaces/zip/z`,
-        response[0]
+       { zip: response[0]}
       );
       res.json(postResponse.data);
     } else {
@@ -29,10 +29,10 @@ const getSpaceByAddrB = async (req, res) => {
   try {
     const response = await byAddrB(addr);
 
-    if (response[0]?.zip) {
+    if (response[0]?.requery) {
       const postResponse = await axios.post(
         `${process.env.NODE_URI}/get-spaces/zip/z`,
-        response[0]
+       { zip: response[0]}
       );
       res.json(postResponse.data);
     } else {

@@ -51,11 +51,12 @@ const byAddr = async (addr) => {
       properties pr ON ps.property_lookup_id = pr.property_id
     WHERE ${ilikeClause} and pr.location_verified = true`;
 
+
   try {
     const results = await db.any(query);
 
     if (!results?.length && zip?.length > 0) {
-      results.push({ zip: zip[0] });
+      results.push({ zip: zip[0], requery: true });
       return results;
     }
 
@@ -69,9 +70,8 @@ const byAddrB = async (addr) => {
   [addr, zip] = removeZipCode(addr);
   let termsarr = addr;
   let substrings = splitStringIntoSubstrings(termsarr);
-
   try {
-    const results = await db.any(`Select ps.*, pr.prop_address, pr.zip, pr.billing_type from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true`);
+    const results = await db.any(`select ps.*, pr.prop_address, pr.zip, pr.billing_type from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true`);
     if (!results?.length) {
       throw new SQLError("no data in spaces table")
     }
@@ -90,7 +90,7 @@ const byAddrB = async (addr) => {
       }
     }
     if (Object.keys(stringset)?.length==0 && zip?.length > 0) {
-      emptarray.push({ zip: zip[0] });
+      emptarray.push({ zip: zip[0], requery: true });
       return emptarray;
     }
     
@@ -160,7 +160,7 @@ const byZip = async (zip) => {
 
     return results;
   } catch (e) {
-    return new SQLSpaceTableError(e);
+    throw new SQLSpaceTableError(e);
   }
 };
 
