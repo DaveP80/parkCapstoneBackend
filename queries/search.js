@@ -41,6 +41,8 @@ const byZipOrAddr = async (body) => {
           `select
       a.*,
       count(*) over(partition by property_id) count_spaces,
+      avg(price) over(partition by property_id) avg_price,
+      min(price) over(partition by property_id) min_price,
       row_number() over(partition by property_id) row_num
     from
       (
@@ -68,7 +70,7 @@ const byZipOrAddr = async (body) => {
           body.zipCode
         );
         if (results.length > 0) {
-          return results;
+          return results.filter(item => item.row_num == 1);
         } else if (!results.length) {
           requery = true;
         }
@@ -89,13 +91,14 @@ const byZipOrAddr = async (body) => {
       ps.sp_type,
       ps.occupied,
       ps.last_used,
-      ps.price,
       pr.prop_address,
       pr.property_id,
       pr.zip,
       pr.billing_type,
       pr.picture,
       count(*) over(partition by property_id) count_spaces,
+      avg(price) over(partition by property_id) avg_price,
+      min(price) over(partition by property_id) min_price,
       row_number() over(partition by property_id) row_num
     from
       parking_spaces ps
@@ -122,7 +125,7 @@ const byZipOrAddr = async (body) => {
             }
           }
           for (let g of results) {
-            if (stringset.hasOwnProperty(g.property_id)) {
+            if (stringset.hasOwnProperty(g.property_id) && g.row_num == 1) {
               resultarr.push({ count_match: stringset[g.property_id], ...g });
             }
           }
