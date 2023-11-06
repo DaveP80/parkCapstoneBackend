@@ -5,7 +5,10 @@ const {
   splitStringIntoSubstrings,
 } = require("../lib/helper/helper");
 
-const { SQLSpaceTableError, SQLError } = require("../lib/errorHandler/customErrors");
+const {
+  SQLSpaceTableError,
+  SQLError,
+} = require("../lib/errorHandler/customErrors");
 
 const getAll = async () => {
   try {
@@ -17,15 +20,126 @@ const getAll = async () => {
 	p.number_spaces,
 	p.billing_type,
 	p.prop_address
-from
+  from
 	parking_spaces ps
-join properties p on
+  join properties p on
 	ps.property_lookup_id = p.property_id
-      `);
+  `);
 
     return results;
   } catch (e) {
     return new SQLSpaceTableError(e);
+  }
+};
+
+const byZipOrAddr = async (body) => {
+  let requery = false;
+  try {
+    if (body.zipCode?.length) {
+      try {
+        const results = await db.any(
+          `select
+      a.*,
+      count(*) over(partition by property_id) count_spaces,
+      row_number() over(partition by property_id) row_num
+    from
+      (
+      select
+      ps.space_id,
+      ps.space_no,
+      ps.sp_type,
+      ps.occupied,
+      ps.last_used,
+      ps.price,
+      pr.prop_address,
+      pr.property_id,
+      pr.zip,
+      pr.billing_type,
+      pr.picture
+      from
+        parking_spaces ps
+      join properties pr on
+        ps.property_lookup_id = pr.property_id
+      where
+        pr.zip = $1 and pr.location_verified = true
+      ) a
+    order by
+      count_spaces desc`,
+          body.zipCode
+        );
+        if (results.length > 0) {
+          return results;
+        } else if (!results.length) {
+          requery = true;
+        }
+      } catch (e) {
+        throw new SQLError("no matches or sql syntax error");
+      }
+    }
+    if (requery || !body.zipCode?.length) {
+      try {
+        [addr, zip] = removeZipCode(body.addr);
+        let termsarr = addr;
+        let substrings = splitStringIntoSubstrings(termsarr);
+        try {
+          const results = await db.any(`
+      select
+      ps.space_id,
+      ps.space_no,
+      ps.sp_type,
+      ps.occupied,
+      ps.last_used,
+      ps.price,
+      pr.prop_address,
+      pr.property_id,
+      pr.zip,
+      pr.billing_type,
+      pr.picture,
+      count(*) over(partition by property_id) count_spaces,
+      row_number() over(partition by property_id) row_num
+    from
+      parking_spaces ps
+    join properties pr on
+      ps.property_lookup_id = pr.property_id
+    where
+      pr.location_verified = true`);
+          if (!results?.length) {
+            throw new SQLError("no data in spaces table");
+          }
+
+          let resultarr = [];
+
+          let stringset = {};
+
+          for (let s of substrings) {
+            for (let o of results) {
+              if (o.row_num == 1) {
+                if (o.prop_address.includes(s)) {
+                  stringset[o.property_id] =
+                    (stringset[o.property_id] || 0) + 1;
+                }
+              }
+            }
+          }
+          for (let g of results) {
+            if (stringset.hasOwnProperty(g.property_id)) {
+              resultarr.push({ count_match: stringset[g.property_id], ...g });
+            }
+          }
+
+          resultarr.sort((a, b) => b.count_match - a.count_match);
+
+          return resultarr;
+        } catch (e) {
+          throw new SQLSpaceTableError(e);
+        }
+      } catch (e) {
+        if (e instanceof SQLError || e instanceof SQLSpaceTableError) throw e;
+        else throw new SQLError("no matches or sql syntax error");
+      }
+    }
+  } catch (e) {
+    throw e;
   }
 };
 
@@ -35,7 +149,7 @@ const byAddr = async (addr) => {
   let substrings = splitStringIntoSubstrings(termsarr);
   const ilikeConditions = substrings.map(
     (term) => `pr.prop_address ILIKE '%${term}%'`
-  ); 
+  );
 
   const ilikeClause = ilikeConditions.join(" OR ");
 
@@ -50,7 +164,6 @@ const byAddr = async (addr) => {
     JOIN
       properties pr ON ps.property_lookup_id = pr.property_id
     WHERE ${ilikeClause} and pr.location_verified = true`;
-
 
   try {
     const results = await db.any(query);
@@ -71,36 +184,32 @@ const byAddrB = async (addr) => {
   let termsarr = addr;
   let substrings = splitStringIntoSubstrings(termsarr);
   try {
-    const results = await db.any(`select ps.*, pr.prop_address, pr.zip, pr.billing_type from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true`);
+    const results = await db.any(
+      `select ps.*, pr.prop_address, pr.zip, pr.billing_type, pr.property_id from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true`
+    );
     if (!results?.length) {
-      throw new SQLError("no data in spaces table")
+      throw new SQLError("no data in spaces table");
     }
 
-    let emptarray = [];
-    
     let resultarr = [];
-    
+
     let stringset = {};
-    
+
     for (let s of substrings) {
       for (let o of results) {
         if (o.prop_address.includes(s)) {
-          stringset[o.space_id] = (stringset[o.space_id] || 0) + 1;
+          stringset[o.property_id] = (stringset[o.property_id] || 0) + 1;
         }
       }
     }
-    if (Object.keys(stringset)?.length==0 && zip?.length > 0) {
-      emptarray.push({ zip: zip[0], requery: true });
-      return emptarray;
-    }
-    
+
     for (let g of results) {
-      if (stringset.hasOwnProperty(g.space_id)) {
-        resultarr.push({ num: stringset[g.space_id], ...g});
+      if (stringset.hasOwnProperty(g.property_id)) {
+        resultarr.push({ num: stringset[g.property_id], ...g });
       }
     }
 
-    resultarr.sort((a,b) => b.num - a.num);
+    resultarr.sort((a, b) => b.num - a.num);
 
     return resultarr;
   } catch (e) {
@@ -141,29 +250,6 @@ const byCity = async (city) => {
   }
 };
 
-const byZip = async (zip) => {
-  try {
-    const results = await db.any(
-      `
-          select
-          ps.*,
-          pr.prop_address,
-          pr.zip
-      from
-          parking_spaces ps
-      join properties pr on
-          ps.property_lookup_id = pr.property_id
-      where
-          pr.zip = $1`,
-      zip
-    );
-
-    return results;
-  } catch (e) {
-    throw new SQLSpaceTableError(e);
-  }
-};
-
 const byOccupied = async (args) => {
   try {
     const results = await db.any(
@@ -186,9 +272,40 @@ const byOccupied = async (args) => {
   }
 };
 
-const getSpace = async (args) => {
+const byZip = async (body) => {
   try {
-    return {};
+    const results = await db.any(
+      `select
+  a.*,
+  count(*) over(partition by property_id) count_spaces,
+  row_number() over(partition by property_id) row_num
+from
+  (
+  select
+  ps.space_id,
+  ps.space_no,
+  ps.sp_type,
+  ps.occupied,
+  ps.last_used,
+  ps.price,
+  pr.prop_address,
+  pr.property_id,
+  pr.zip,
+  pr.billing_type,
+  pr.picture
+  from
+    parking_spaces ps
+  join properties pr on
+    ps.property_lookup_id = pr.property_id
+  where
+    pr.zip = $1 and pr.location_verified = true
+  ) a
+order by
+  count_spaces desc`,
+      body.zipCode
+    );
+
+    return results;
   } catch (e) {
     return new SQLSpaceTableError(e);
   }
@@ -196,10 +313,10 @@ const getSpace = async (args) => {
 
 module.exports = {
   getAll,
-  getSpace,
+  byZip,
   byAddr,
   byAddrB,
   byCity,
-  byZip,
+  byZipOrAddr,
   byOccupied,
 };

@@ -1,26 +1,19 @@
-const axios = require("axios");
-const { byAddr, byAddrB, byCity, byZip, byOccupied } = require("../queries/search");
+const {
+  byZipOrAddr,
+  byAddrB,
+  byCity,
+  byOccupied,
+  byZip,
+} = require("../queries/search");
 
 const { stc } = require("../lib/helper/helper");
-
-const getSpaceByAddr = async (req, res) => {
-  const addr = req.body.addr;
-
-  try {
-    const response = await byAddr(addr);
-
-    if (response[0]?.requery) {
-      const postResponse = await axios.post(
-        `${process.env.NODE_URI}/get-spaces/zip/z`,
-       { zip: response[0]}
-      );
-      res.json(postResponse.data);
-    } else {
-      res.json(response);
-    }
-  } catch (e) {
-    res.status(e.status || 500).json({ error: e.error, message: e.message });
-  }
+//Search Endpoint for MainImage search bar.
+const getSpaceByZA = async (req, res) => {
+  await byZipOrAddr(req.body)
+    .then((response) => res.json(response))
+    .catch((e) =>
+      res.status(stc(e)).json({ error: e.error, message: e.message })
+    );
 };
 
 const getSpaceByAddrB = async (req, res) => {
@@ -29,15 +22,7 @@ const getSpaceByAddrB = async (req, res) => {
   try {
     const response = await byAddrB(addr);
 
-    if (response[0]?.requery) {
-      const postResponse = await axios.post(
-        `${process.env.NODE_URI}/get-spaces/zip/z`,
-       { zip: response[0]}
-      );
-      res.json(postResponse.data);
-    } else {
-      res.json(response);
-    }
+    res.json(response);
   } catch (e) {
     res.status(e.status || 500).json({ error: e.error, message: e.message });
   }
@@ -55,8 +40,7 @@ const getSpaceByCity = async (req, res) => {
 };
 
 const getSpaceByZip = async (req, res) => {
-  const zip = req.body.zip;
-  await byZip(zip)
+  await byZip(req.body)
     .then((response) => {
       res.json(response);
     })
@@ -78,7 +62,7 @@ const getSpaceByIsOccupied = async (req, res) => {
 };
 
 module.exports = {
-  getSpaceByAddr,
+  getSpaceByZA,
   getSpaceByAddrB,
   getSpaceByCity,
   getSpaceByZip,
