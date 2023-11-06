@@ -29,7 +29,7 @@ const getAllUsers = async () => {
 
     return allUsers;
   } catch (e) {
-    return e;
+    throw e;
   }
 };
 
@@ -177,7 +177,8 @@ const login = async (data) => {
       }
     }
   } catch (e) {
-    throw new SQLError(e);
+    if (e instanceof PasswordError) throw e;
+    else throw new SQLError(e);
   }
 };
 //when a user clicks on email confirmation link
@@ -206,7 +207,7 @@ const authLogin = async (id, is_renter) => {
 
           sqlArr["renterInfo"] = makeRenter[0];
         } catch (e) {
-          throw new MultiStatusError(JSON.stringify(e), sqlArr);
+          throw new MultiStatusError(e, sqlArr);
         }
       }
       return sqlArr;

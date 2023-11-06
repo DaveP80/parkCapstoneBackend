@@ -1,4 +1,3 @@
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db/dbConfig");
 const nodemailer = require("nodemailer");
@@ -80,31 +79,45 @@ const createRenter = async (data) => {
 
 const getPropInfo = async (data) => {
   try {
-    const results = await db.any(`select * from properties where owner_id = $1`, data);
+    const results = await db.any(
+      `select * from properties where owner_id = $1`,
+      data
+    );
     return results;
   } catch (e) {
     return e;
   }
 };
 
-const authLogin = async (id) => {
+const spaceAndPropInfo = async (pid, uid) => {
   try {
-    const auUser = await db.any(
-      "Update client_user set is_auth = true where id=$1 returning *",
-      id
+    const spaces = await db.any(
+      `select ps.* from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true and property_lookup_id = $1 and space_owner_id = $2 order by space_no asc`,
+      [pid, uid]
     );
-
-    if (auUser.length === 0) {
-      throw {
-        message: `Invalid id: ${id}`,
-        error: `check id for unauthenticated user`,
-        status: 403,
-      };
-    } else {
-      return auUser[0];
-    }
+    return spaces;
   } catch (e) {
-    throw { message: "server error", error: JSON.stringify(e), status: 500 };
+    throw e;
+  }
+};
+
+const updateSpaces = async (args) => {
+  const space_id = args.space_id;
+  let arr = Object.keys(args.setRow);
+  let vals = [...Object.values(args.setRow), space_id];
+  try {
+    const Row = await db.any(
+      `UPDATE  parking_spaces SET ${arr
+        .map((item, i) => {
+          return `${item} = $${i + 1}`;
+        })
+        .join(", ")} where
+        space_id = $${vals.length} RETURNING *`,
+      vals
+    );
+    return Row;
+  } catch (e) {
+    throw e;
   }
 };
 
@@ -131,10 +144,29 @@ const createProperty = async (body) => {
         body.picture,
       ]
     );
-    if (update?.length == 0) throw new SQLError("Invalid form entry");
     return update[0];
   } catch (e) {
-    return e;
+    throw e;
+  }
+};
+
+const createSpaces = async(body) => {
+  try {
+    await db.tx(async (t) => {
+      const queries = body.map((l) => {
+        return t.none(
+          `INSERT INTO 
+          parking_spaces(space_owner_id, property_lookup_id, space_no, sp_type, price) 
+          VALUES($1, $2, $3, $4, $5)`,
+          [l.space_owner_id, l.property_lookup_id, l.space_no, l.sp_type, l.price]
+        );
+      });
+      await t.batch(queries);
+    });
+
+    return { success: true, message: `${body.length} rows inserted successfully` };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 };
 
@@ -167,9 +199,11 @@ const updateRenterAddress = async (addr, id) => {
 };
 
 module.exports = {
-  createRenter,
   createProperty,
   getPropInfo,
-  authLogin,
+  spaceAndPropInfo,
+  createSpaces,
+  updateSpaces,
+  createRenter,
   updateRenterAddress,
 };

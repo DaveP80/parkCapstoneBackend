@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  getSpaceByAddr,
+  getSpaceByZA,
   getSpaceByAddrB,
   getSpaceByCity,
   getSpaceByZip,
@@ -13,7 +13,7 @@ const getAllSpaces = require("../controllers/heroController")
 
 router.post("/city/c", getSpaceByCity);
 
-router.post("/address/a", getSpaceByAddr);
+router.post("/address/a", getSpaceByZA);
 
 router.post("/address/b", getSpaceByAddrB);
 
