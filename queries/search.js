@@ -3,6 +3,7 @@ const db = require("../db/dbConfig");
 const {
   removeZipCode,
   splitStringIntoSubstrings,
+  closeZipCodes,
 } = require("../lib/helper/helper");
 
 const {
@@ -63,14 +64,22 @@ const byZipOrAddr = async (body) => {
       join properties pr on
         ps.property_lookup_id = pr.property_id
       where
-        pr.zip = $1 and pr.location_verified = true
+        pr.location_verified = true
       ) a
     order by
-      count_spaces desc`,
-          body.zipCode
+      count_spaces desc`
         );
         if (results.length > 0) {
-          return results.filter(item => item.row_num == 1);
+          let res = results.filter((item) => item.row_num == 1);
+
+          let rzips = closeZipCodes(
+            body.zipCode,
+            res.map((item) => item.zip)
+          );
+          let rest = res.filter((item) => rzips.includes(item.zip));
+          if (rest.length > 0) return rest;
+          else requery = true;
+          //return results.filter(item => item.row_num == 1);
         } else if (!results.length) {
           requery = true;
         }
