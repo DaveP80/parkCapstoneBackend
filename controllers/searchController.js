@@ -9,7 +9,7 @@ const {
 const { stc } = require("../lib/helper/helper");
 //Search Endpoint for MainImage search bar.
 const getSpaceByZA = async (req, res) => {
-  await byZipOrAddr(req.body)
+  await byZipOrAddr(req.query.zipCode, req.query.addr)
     .then((response) => res.json(response))
     .catch((e) =>
       res.status(stc(e)).json({ error: e.error, message: e.message })

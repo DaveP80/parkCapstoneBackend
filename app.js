@@ -11,6 +11,7 @@ const searchRouter = require("./routers/searchRouter");
 const parkingSpotRouter = require("./routers/parkingSpotRouter");
 const pmtRouter = require("./routers/pmtRouter");
 const mapsRouter = require("./routers/mapsRouter");
+const bookingRouter = require("./routers/bookingRouter");
 const verifyJWT = require("./lib/authMiddleware/verifyJWT")
 const refreshTokenController = require("./controllers/refreshTokenController");
 const logoutController = require("./controllers/logoutController");
@@ -42,6 +43,8 @@ app.use(verifyJWT);
 app.use("/user", userRouter);
 
 app.use("/renters", renterRouter);
+
+app.use("/book", bookingRouter);
 
 app.use("/checkout", pmtRouter);
 
