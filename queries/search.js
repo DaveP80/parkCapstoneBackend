@@ -33,10 +33,10 @@ const getAll = async () => {
   }
 };
 
-const byZipOrAddr = async (body) => {
+const byZipOrAddr = async (zipCode, addr) => {
   let requery = false;
   try {
-    if (body.zipCode?.length) {
+    if (zipCode?.length) {
       try {
         const results = await db.any(
           `select
@@ -73,7 +73,7 @@ const byZipOrAddr = async (body) => {
           let res = results.filter((item) => item.row_num == 1);
 
           let rzips = closeZipCodes(
-            body.zipCode,
+            zipCode,
             res.map((item) => item.zip)
           );
           let rest = res.filter((item) => rzips.includes(item.zip));
@@ -87,10 +87,10 @@ const byZipOrAddr = async (body) => {
         throw new SQLError("no matches or sql syntax error");
       }
     }
-    if (requery || !body.zipCode?.length) {
+    if (requery || !zipCode?.length) {
       try {
-        [addr, zip] = removeZipCode(body.addr);
-        let termsarr = addr;
+        const [addres, zip] = removeZipCode(addr);
+        let termsarr = addres;
         let substrings = splitStringIntoSubstrings(termsarr);
         try {
           const results = await db.any(`

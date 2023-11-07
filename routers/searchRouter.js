@@ -13,7 +13,7 @@ const getAllSpaces = require("../controllers/heroController")
 
 router.post("/city/c", getSpaceByCity);
 
-router.post("/address/a", getSpaceByZA);
+router.get("/address/a", getSpaceByZA);
 
 router.post("/address/b", getSpaceByAddrB);
 
