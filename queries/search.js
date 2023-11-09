@@ -29,10 +29,10 @@ const getAll = async () => {
 
     return results;
   } catch (e) {
-    return new SQLSpaceTableError(e);
+    throw new SQLSpaceTableError(e);
   }
 };
-
+//get properties and their spaces and information about how many of their spaces are unoccupied
 const byZipOrAddr = async (zipCode, addr) => {
   let requery = false;
   try {
@@ -75,8 +75,8 @@ const byZipOrAddr = async (zipCode, addr) => {
             zipCode,
             res.map((item) => item.zip)
           );
-          let rest = res.filter((item) => rzips.includes(item.zip));
-          if (rest.length > 0) return rest;
+      
+          if (rzips.length > 0) return results.filter(item => rzips.includes(item.zip));
           else requery = true;
           //return results.filter(item => item.row_num == 1);
         } else if (!results.length) {
@@ -133,7 +133,7 @@ const byZipOrAddr = async (zipCode, addr) => {
             }
           }
           for (let g of results) {
-            if (stringset.hasOwnProperty(g.property_id) && g.row_num == 1) {
+            if (stringset.hasOwnProperty(g.property_id) && stringset[g.property_id] > 2) {
               resultarr.push({ count_match: stringset[g.property_id], ...g });
             }
           }
@@ -229,35 +229,24 @@ const byAddrB = async (addr) => {
   }
 };
 
-const byCity = async (city) => {
+const bySpaceId = async (id) => {
   try {
     const results = await db.any(
-      `
-          select
-          ps.*,
-          pr.prop_address
-          pr.zip
-      from
-          parking_spaces ps
-      join properties pr on
-          ps.property_lookup_id = pr.property_id
-      where
-          pr.zip ilike '%' || $1 || '%'
-          and (
-          select
-              COUNT(*)
-          from
-              regexp_split_to_table(pr.zip,
-              '') as t(sub)
-          where
-              LENGTH(t.sub) = 4
-                  and t.sub ilike $1) >= 1`,
-      city
+      `SELECT p.*, s.*, 
+      cu.first_name AS client_first_name, cu.last_name AS client_last_name, cu.email AS client_email, 
+      ru.renter_id, ru.renter_address, ru.renter_email
+FROM parking_spaces p
+JOIN properties s ON p.property_lookup_id = s.property_id
+LEFT JOIN client_user cu ON p.customer_id = cu.id
+LEFT JOIN renter_user ru ON p.customer_id = ru.renter_id
+WHERE p.space_id = $1`,
+      id
     );
-
-    return results;
+    if (results.length>0) return results;
+    else throw new SQLError("Parking spot not found", 404);
   } catch (e) {
-    return new SQLSpaceTableError(e);
+    if(e instanceof SQLError) throw e;
+    else throw e;
   }
 };
 
@@ -326,7 +315,7 @@ module.exports = {
   byZip,
   byAddr,
   byAddrB,
-  byCity,
   byZipOrAddr,
   byOccupied,
+  bySpaceId
 };

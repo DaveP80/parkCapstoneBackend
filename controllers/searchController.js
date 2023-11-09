@@ -1,7 +1,6 @@
 const {
   byZipOrAddr,
   byAddrB,
-  byCity,
   byOccupied,
   byZip,
 } = require("../queries/search");
@@ -26,17 +25,6 @@ const getSpaceByAddrB = async (req, res) => {
   } catch (e) {
     res.status(e.status || 500).json({ error: e.error, message: e.message });
   }
-};
-
-const getSpaceByCity = async (req, res) => {
-  const city = req.body.city;
-  await byCity(city)
-    .then((response) => {
-      res.json(response);
-    })
-    .catch((e) =>
-      res.status(stc(e)).json({ error: e.error, message: e.message })
-    );
 };
 
 const getSpaceByZip = async (req, res) => {
@@ -64,7 +52,6 @@ const getSpaceByIsOccupied = async (req, res) => {
 module.exports = {
   getSpaceByZA,
   getSpaceByAddrB,
-  getSpaceByCity,
   getSpaceByZip,
   getSpaceByIsOccupied,
 };

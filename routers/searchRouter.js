@@ -4,14 +4,11 @@ const router = express.Router();
 const {
   getSpaceByZA,
   getSpaceByAddrB,
-  getSpaceByCity,
   getSpaceByZip,
   getSpaceByIsOccupied,
 } = require("../controllers/searchController");
 
 const getAllSpaces = require("../controllers/heroController")
-
-router.post("/city/c", getSpaceByCity);
 
 router.get("/address/a", getSpaceByZA);
 

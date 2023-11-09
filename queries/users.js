@@ -269,6 +269,31 @@ const getInfo = async (args) => {
   }
 };
 
+const getByEmail = async(email) => {
+  try {
+    const result = await db.any(
+      `select
+      email
+    from
+      client_user
+    where
+      email = $1
+    union
+           select
+      user_email
+    from
+      auth_users
+    where
+      user_email = $1`,
+       email 
+    )
+    return result;
+
+  } catch(e) {
+    throw e;
+  }
+}
+
 const updateClientAddress = async (addr, id, role) => {
   try {
     const update = await db.any(
@@ -310,4 +335,5 @@ module.exports = {
   authLogin,
   getInfo,
   updateClientAddress,
+  getByEmail,
 };

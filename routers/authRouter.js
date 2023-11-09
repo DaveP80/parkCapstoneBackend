@@ -8,11 +8,12 @@ const {
   createUserFunc,
   authCreateUser,
   loginFunc,
+  preRegister
 } = require("../controllers/authController");
 
 const { authUserMiddleware, jwtMiddleware } = require("../lib/authMiddleware/jwtMiddleware");
 
-//router.get("/", jwtMiddleware, allGetUsersFunc);
+router.get("/check-for-email/:email", preRegister);
 
 router.put("/create-user/auth", authUserMiddleware, authCreateUser);
 

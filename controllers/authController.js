@@ -3,6 +3,7 @@ const {
   createUser,
   login,
   authLogin,
+  getByEmail
 } = require("../queries/users");
 
 const { parsedMessage, stc } = require("../lib/helper/helper");
@@ -64,9 +65,20 @@ const loginFunc = async (req, res, next) => {
     });
 };
 
+const preRegister = async (req, res, next) => {
+  await getByEmail(req.params.email)
+    .then((response) => {
+      res.json(response);
+    })
+    .catch((e) => {
+      res.json({ error: e.error, message: e.message });
+    });
+};
+
 module.exports = {
   allGetUsersFunc,
   createUserFunc,
   loginFunc,
   authCreateUser,
+  preRegister
 };
