@@ -44,6 +44,7 @@ const byZipOrAddr = async (zipCode, addr) => {
       count(*) over(partition by property_id) count_spaces,
       avg(price) over(partition by property_id) avg_price,
       min(price) over(partition by property_id) min_price,
+      (select count(*) from bookings where is_occupied = true and booking_space_id in (select space_id from parking_spaces z join properties n on z.property_lookup_id = n.property_id where n.property_id = a.property_id)) occupied,
       row_number() over(partition by property_id) row_num
     from
       (
@@ -51,14 +52,12 @@ const byZipOrAddr = async (zipCode, addr) => {
       ps.space_id,
       ps.space_no,
       ps.sp_type,
-      ps.occupied,
       ps.last_used,
       ps.price,
       pr.prop_address,
       pr.property_id,
       pr.zip,
-      pr.billing_type,
-      pr.picture
+      pr.billing_type
       from
         parking_spaces ps
       join properties pr on
@@ -98,7 +97,6 @@ const byZipOrAddr = async (zipCode, addr) => {
       ps.space_id,
       ps.space_no,
       ps.sp_type,
-      ps.occupied,
       ps.last_used,
       pr.prop_address,
       pr.property_id,
@@ -108,7 +106,8 @@ const byZipOrAddr = async (zipCode, addr) => {
       count(*) over(partition by property_id) count_spaces,
       avg(price) over(partition by property_id) avg_price,
       min(price) over(partition by property_id) min_price,
-      row_number() over(partition by property_id) row_num
+      row_number() over(partition by property_id) row_num,
+      (select count(*) from bookings where is_occupied = true and booking_space_id in (select space_id from parking_spaces z join properties n on z.property_lookup_id = n.property_id where n.property_id = pr.property_id)) occupied
     from
       parking_spaces ps
     join properties pr on
@@ -297,7 +296,6 @@ from
   ps.space_id,
   ps.space_no,
   ps.sp_type,
-  ps.occupied,
   ps.last_used,
   ps.price,
   pr.prop_address,
