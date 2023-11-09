@@ -12,7 +12,7 @@ const parkingSpotRouter = require("./routers/parkingSpotRouter");
 const pmtRouter = require("./routers/pmtRouter");
 const mapsRouter = require("./routers/mapsRouter");
 const bookingRouter = require("./routers/bookingRouter");
-const verifyJWT = require("./lib/authMiddleware/verifyJWT")
+const verifyJWT = require("./lib/authMiddleware/verifyJWT");
 const refreshTokenController = require("./controllers/refreshTokenController");
 const logoutController = require("./controllers/logoutController");
 const app = express();
@@ -36,9 +36,11 @@ app.use("/auth", authRouter);
 
 app.use("/get-spaces", searchRouter);
 
-app.use("/parking-spots", parkingSpotRouter);
+// app.use("/parking-spots", parkingSpotRouter);
 
 app.use(verifyJWT);
+
+app.use("/parking-spots", parkingSpotRouter);
 
 app.use("/user", userRouter);
 
