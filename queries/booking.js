@@ -27,7 +27,6 @@ const byTimeAndZ = async (args) => {
               ps.space_id,
               ps.space_no,
               ps.sp_type,
-              ps.occupied,
               ps.last_used,
               ps.price,
               pr.prop_address,
@@ -39,15 +38,13 @@ const byTimeAndZ = async (args) => {
               parking_spaces ps
           join properties pr on
               ps.property_lookup_id = pr.property_id
-          left join bookings b on
-              b.booking_space_id = ps.space_id
           where
               pr.location_verified = true
-              and b.booking_space_id not in 
+              and space_id not in 
               (SELECT booking_space_id
                 FROM bookings
                 WHERE start_time < $2
-                  AND end_time > $1)) a
+                  AND end_time > $1 and is_occupied = true)) a
       order by
           count_spaces desc`,
           [args[2], args[3]]
@@ -81,7 +78,6 @@ const byTimeAndZ = async (args) => {
       ps.space_id,
       ps.space_no,
       ps.sp_type,
-      ps.occupied,
       ps.last_used,
       ps.price,
       pr.prop_address,
@@ -95,12 +91,11 @@ const byTimeAndZ = async (args) => {
       parking_spaces ps
     join properties pr on
       ps.property_lookup_id = pr.property_id
-    left join bookings b on b.booking_space_id = ps.space_id
     where
-      pr.location_verified = true and b.booking_space_id not in (SELECT booking_space_id
+      pr.location_verified = true and space_id not in (SELECT booking_space_id
         FROM bookings
         WHERE start_time < $2
-          AND end_time > $1)`,
+          AND end_time > $1 and is_occupied = true)`,
             [args[2], args[3]]
           );
           if (!results?.length) {
@@ -146,6 +141,30 @@ const byTimeAndZ = async (args) => {
   }
 };
 
+const makeNewBooking = async(args) => {
+        try {
+          await db.tx(async (t) => {
+            const queries =  t.none(
+                `INSERT INTO 
+                bookings(customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied) values (
+                  $1, (select case when a.count_o < (select count(*) from bookings where booking_space_id = $2) then null else 
+                  ${args[1]} end from (select count(*) count_o from bookings where booking_space_id = $2 and is_occupied = false) a), $3,
+                  $4, $5, true  
+                )`,
+                args
+                //customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied
+              );
+            await t.batch(queries);
+          });
+      
+          return { success: true, message: `inserted row with booking_space_id: ${args[1]}, start_time: ${args[3]}` };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+
+}
+
 module.exports = {
   byTimeAndZ,
+  makeNewBooking,
 };

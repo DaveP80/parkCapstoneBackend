@@ -1,26 +1,8 @@
 --
 -- PostgreSQL database dump
 --
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
---
--- Name: event_update_tf(); Type: FUNCTION; Schema: public; Owner: cars_dx8r_user
---
-
-CREATE FUNCTION public.event_update_tf() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    if NEW.end_time IS NOT NULL then
-        NEW.tsrange = tsrange(NEW.start_time, NEW.end_time, '[]');
-    else
-        NEW.tsrange = tsrange(NEW.start_time, null, '[)');
-    end if;
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.event_update_tf() OWNER TO cars_dx8r_user;
 
 --
 -- Name: insert_auth_user(); Type: FUNCTION; Schema: public; Owner: cars_dx8r_user
@@ -71,7 +53,7 @@ CREATE TABLE public.bookings (
     rating integer DEFAULT 5,
     start_time timestamp without time zone NOT NULL,
     end_time timestamp without time zone,
-    tsrange tsrange NOT NULL,
+    is_occupied boolean DEFAULT false,
     CONSTRAINT booking_time_future CHECK ((start_time > (now() + '02:00:00'::interval))),
     CONSTRAINT bookings_rating_check CHECK (((rating >= 1) AND (rating <= 5)))
 );
@@ -156,7 +138,6 @@ CREATE TABLE public.parking_spaces (
     property_lookup_id uuid,
     space_no integer,
     sp_type text,
-    occupied boolean DEFAULT false NOT NULL,
     last_used timestamp with time zone,
     customer_id integer DEFAULT '-1'::integer NOT NULL,
     price double precision DEFAULT 15.00 NOT NULL,
@@ -364,20 +345,6 @@ ALTER TABLE ONLY public.parking_spaces
 
 ALTER TABLE ONLY public.parking_spaces
     ADD CONSTRAINT unique_space_id_no UNIQUE (space_id, space_no);
-
-
---
--- Name: event_range_idx; Type: INDEX; Schema: public; Owner: cars_dx8r_user
---
-
-CREATE INDEX event_range_idx ON public.bookings USING gist (tsrange);
-
-
---
--- Name: bookings event_update_t; Type: TRIGGER; Schema: public; Owner: cars_dx8r_user
---
-
-CREATE TRIGGER event_update_t BEFORE INSERT OR UPDATE ON public.bookings FOR EACH ROW EXECUTE FUNCTION public.event_update_tf();
 
 
 --
