@@ -10,7 +10,7 @@ const {
   SQLSpaceTableError,
   SQLError,
 } = require("../lib/errorHandler/customErrors");
-
+//Search by zipcode and or address for spaces that are unoccupied and by time block
 const byTimeAndZ = async (args) => {
   let requery = false;
   try {
@@ -41,10 +41,17 @@ const byTimeAndZ = async (args) => {
           where
               pr.location_verified = true
               and space_id not in 
-              (SELECT booking_space_id
-                FROM bookings
-                WHERE start_time < $2
-                  AND end_time > $1 and is_occupied = true)) a
+                    (
+              select
+                  booking_space_id
+              from
+                  bookings
+              where
+                  booking_space_id = space_id
+                  and ((start_time,
+                  end_time) 
+                overlaps ('${args[2]}',
+                  '${args[3]}')))) a
       order by
           count_spaces desc`,
           [args[2], args[3]]
@@ -92,11 +99,17 @@ const byTimeAndZ = async (args) => {
     join properties pr on
       ps.property_lookup_id = pr.property_id
     where
-      pr.location_verified = true and space_id not in (SELECT booking_space_id
-        FROM bookings
-        WHERE start_time < $2
-          AND end_time > $1 and is_occupied = true)`,
-            [args[2], args[3]]
+      pr.location_verified = true and space_id not in (
+        select
+            booking_space_id
+        from
+            bookings
+        where
+            booking_space_id = space_id
+            and ((start_time,
+            end_time) 
+          overlaps ('${args[2]}',
+            '${args[3]}')))`
           );
           if (!results?.length) {
             throw new SQLError("no data in spaces table");
@@ -141,28 +154,30 @@ const byTimeAndZ = async (args) => {
   }
 };
 
-const makeNewBooking = async(args) => {
-        try {
-          await db.tx(async (t) => {
-            const queries =  t.none(
-                `INSERT INTO 
+const makeNewBooking = async (args) => {
+  try {
+    await db.tx(async (t) => {
+      const queries = t.none(
+        `INSERT INTO 
                 bookings(customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied) values (
                   $1, (select case when a.count_o < (select count(*) from bookings where booking_space_id = $2) then null else 
                   ${args[1]} end from (select count(*) count_o from bookings where booking_space_id = $2 and is_occupied = false) a), $3,
                   $4, $5, true  
                 )`,
-                args
-                //customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied
-              );
-            await t.batch(queries);
-          });
-      
-          return { success: true, message: `inserted row with booking_space_id: ${args[1]}, start_time: ${args[3]}` };
-        } catch (error) {
-          return { success: false, error: error.message };
-        }
+        args
+        //customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied
+      );
+      await t.batch(queries);
+    });
 
-}
+    return {
+      success: true,
+      message: `inserted row with booking_space_id: ${args[1]}, start_time: ${args[3]}`,
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
 
 module.exports = {
   byTimeAndZ,
