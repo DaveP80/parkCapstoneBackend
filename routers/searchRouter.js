@@ -8,11 +8,14 @@ const {
   getSpaceByIsOccupied,
 } = require("../controllers/searchController");
 
-const getAllSpaces = require("../controllers/heroController")
+const getAllSpaces = require("../controllers/heroController");
+const { getSpacesByTimeAndPropertyId, getAvailSpaces } = require("../controllers/bookingController");
 
 router.get("/address/a", getSpaceByZA);
 
-router.post("/address/b", getSpaceByAddrB);
+router.get("/checkout/a", getSpacesByTimeAndPropertyId);
+
+router.get("/landing", getAvailSpaces);
 
 router.post("/zip/z", getSpaceByZip);
 

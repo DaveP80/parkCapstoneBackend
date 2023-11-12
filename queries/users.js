@@ -42,7 +42,7 @@ const createUser = async (data) => {
 
   try {
     const checkLogs = await db.any(
-      `select * from auth_users where user_email=$1`,
+      `select * from auth_users where user_email ilike $1`,
       email
     );
     if (checkLogs[0]) {
@@ -129,7 +129,7 @@ const login = async (data) => {
     left join renter_user r on
       c.id = r.renter_id
     where
-      c.email = $1
+      c.email ilike $1
       and c.is_auth = true`,
       email
     );
@@ -277,14 +277,14 @@ const getByEmail = async(email) => {
     from
       client_user
     where
-      email = $1
+      email ilike $1
     union
            select
       user_email
     from
       auth_users
     where
-      user_email = $1`,
+      user_email ilike $1`,
        email 
     )
     return result;

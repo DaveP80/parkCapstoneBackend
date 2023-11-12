@@ -11,6 +11,19 @@ const {
   SQLError,
 } = require("../lib/errorHandler/customErrors");
 //Search by zipcode and or address for spaces that are unoccupied and by time block
+const byUserId = async (args) => {
+  try {
+    const results = await db.any(
+      `select * from bookings where customer_booking_id = $1 order by is_occupied, end_time desc`,
+      args
+    );
+
+    return results;
+  } catch (e) {
+    throw new SQLError(e);
+  }
+};
+
 const byTimeAndZ = async (args) => {
   let requery = false;
   try {
@@ -154,32 +167,103 @@ const byTimeAndZ = async (args) => {
   }
 };
 
-const makeNewBooking = async (args) => {
+const byTimeAndPropertyId = async (args) => {
+  try {
+    const results = await db.any(
+      `select
+          a.*,
+          count(*) over(partition by property_id) count_spaces,
+          row_number() over(partition by sp_type) row_num
+      from
+          (
+          select
+              ps.space_id,
+              ps.space_no,
+              ps.sp_type,
+              ps.last_used,
+              ps.price,
+              pr.owner_id,
+              pr.prop_address,
+              pr.property_id,
+              pr.zip,
+              pr.billing_type,
+              pr.picture
+          from
+              parking_spaces ps
+          join properties pr on
+              ps.property_lookup_id = pr.property_id
+          where
+              pr.location_verified = true
+              and left(pr.property_id::TEXT, 13) ilike '${args[0]}'
+              and space_id not in 
+                    (
+              select
+                  booking_space_id
+              from
+                  bookings
+              where
+                  booking_space_id = space_id
+                  and ((start_time,
+                  end_time) 
+                overlaps ('${args[1]}',
+                  '${args[2]}')) and is_occupied = true)) a
+      order by
+          count_spaces desc`,
+      args
+      //$2 start_time
+      //$3 end_time
+    );
+    return results;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const makeNewBooking = async (id, args) => {
+  let newBookingId;
   try {
     await db.tx(async (t) => {
-      const queries = t.none(
-        `INSERT INTO 
-                bookings(customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied) values (
-                  $1, (select case when a.count_o < (select count(*) from bookings where booking_space_id = $2) then null else 
-                  ${args[1]} end from (select count(*) count_o from bookings where booking_space_id = $2 and is_occupied = false) a), $3,
-                  $4, $5, true  
-                )`,
-        args
-        //customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied
-      );
-      await t.batch(queries);
+      const query = `
+          insert into bookings(customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied)
+          values (
+            $1,
+            (select space_id from parking_spaces where space_id = $2 and space_id not in (
+              select
+              booking_space_id
+          from
+              bookings
+          where
+              booking_space_id = $2
+              and ((start_time,
+              end_time) 
+            overlaps ('${args[2]}',
+              '${args[3]}')) and is_occupied = true)), $3, $4, $5, true) RETURNING booking_id;`;
+      try {
+        const result = await t.one(query, [
+          id,
+          args[0],
+          args[1],
+          args[2],
+          args[3],
+        ]);
+        newBookingId = result.booking_id;
+      } catch (error) {
+        throw error;
+      }
     });
-
     return {
       success: true,
-      message: `inserted row with booking_space_id: ${args[1]}, start_time: ${args[3]}`,
+      message: `inserted row with booking_space_id: ${args[0]}, start_time: ${args[2]}`,
+      booking_id: newBookingId,
     };
   } catch (error) {
-    return { success: false, error: error.message };
+    throw error;
   }
 };
 
 module.exports = {
+  byUserId,
   byTimeAndZ,
+  byTimeAndPropertyId,
   makeNewBooking,
 };

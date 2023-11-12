@@ -92,7 +92,9 @@ const getPropInfo = async (data) => {
 const spaceAndPropInfo = async (pid, uid) => {
   try {
     const spaces = await db.any(
-      `select ps.* from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true and property_lookup_id = $1 and space_owner_id = $2 order by space_no asc`,
+      `select ps.*, case when space_id in (select booking_space_id from bookings where is_occupied = true) then 1 else null end as occupied, min(price) over(partition by sp_type) min_price_overtype from parking_spaces ps join 
+      properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true and property_lookup_id = $1 and 
+      space_owner_id = $2 order by space_no asc`,
       [pid, uid]
     );
     return spaces;
