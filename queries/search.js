@@ -98,6 +98,7 @@ const byZipOrAddr = async (zipCode, addr) => {
       ps.space_no,
       ps.sp_type,
       ps.last_used,
+      ps.price,
       pr.prop_address,
       pr.property_id,
       pr.zip,

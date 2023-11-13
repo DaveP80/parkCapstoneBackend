@@ -2,9 +2,12 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  getAvailSpaces,
+  makeNewCheckoutB,
+  getBookings
 } = require("../controllers/bookingController");
 
-router.get("/search", getAvailSpaces);
+router.get("/mybookings", getBookings);
+
+router.post("/insert-one", makeNewCheckoutB);
 
 module.exports = router;
