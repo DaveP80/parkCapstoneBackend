@@ -1,8 +1,19 @@
 --
 -- PostgreSQL database dump
 --
+--
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
 
 --
 -- Name: insert_auth_user(); Type: FUNCTION; Schema: public; Owner: cars_dx8r_user
@@ -54,8 +65,8 @@ CREATE TABLE public.bookings (
     start_time timestamp without time zone NOT NULL,
     end_time timestamp without time zone,
     is_occupied boolean DEFAULT false,
-    CONSTRAINT booking_time_future CHECK ((start_time > (now() + '02:00:00'::interval))),
-    CONSTRAINT bookings_rating_check CHECK (((rating >= 1) AND (rating <= 5)))
+    CONSTRAINT bookings_rating_check CHECK (((rating >= 1) AND (rating <= 5))),
+    CONSTRAINT bookings_time_check CHECK ((end_time > start_time))
 );
 
 
@@ -172,6 +183,21 @@ ALTER TABLE public.parking_spaces_space_id_seq OWNER TO cars_dx8r_user;
 
 ALTER SEQUENCE public.parking_spaces_space_id_seq OWNED BY public.parking_spaces.space_id;
 
+
+--
+-- Name: payment_transactions; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+--
+
+CREATE TABLE public.payment_transactions (
+    pmt_id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    user_pmt_id integer,
+    expiry text,
+    pmt_booking_id integer,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.payment_transactions OWNER TO cars_dx8r_user;
 
 --
 -- Name: properties; Type: TABLE; Schema: public; Owner: cars_dx8r_user
@@ -316,6 +342,14 @@ ALTER TABLE ONLY public.renter_user
 
 
 --
+-- Name: payment_transactions unique_booking_id; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+--
+
+ALTER TABLE ONLY public.payment_transactions
+    ADD CONSTRAINT unique_booking_id UNIQUE (pmt_booking_id);
+
+
+--
 -- Name: client_user unique_client_user; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
 --
 
@@ -392,6 +426,22 @@ ALTER TABLE ONLY public.parking_spaces
 
 ALTER TABLE ONLY public.parking_spaces
     ADD CONSTRAINT fk_space_property_id FOREIGN KEY (property_lookup_id) REFERENCES public.properties(property_id);
+
+
+--
+-- Name: payment_transactions payment_transactions_pmt_booking_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+--
+
+ALTER TABLE ONLY public.payment_transactions
+    ADD CONSTRAINT payment_transactions_pmt_booking_id_fkey FOREIGN KEY (pmt_booking_id) REFERENCES public.bookings(booking_id);
+
+
+--
+-- Name: payment_transactions payment_transactions_user_pmt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+--
+
+ALTER TABLE ONLY public.payment_transactions
+    ADD CONSTRAINT payment_transactions_user_pmt_id_fkey FOREIGN KEY (user_pmt_id) REFERENCES public.client_user(id);
 
 
 --

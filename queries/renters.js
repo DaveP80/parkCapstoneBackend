@@ -89,6 +89,58 @@ const getPropInfo = async (data) => {
   }
 };
 
+const getSoldSpacesByOwnerId = async (id) => {
+  try {
+    const results = await db.any(
+      `select
+      distinct b.*,
+      z.owner_id
+    from
+      bookings b
+    join (
+      select
+        *
+      from
+        properties pr
+      natural join parking_spaces ps
+      where
+        pr.owner_id = $1) z on
+      b.booking_space_id = z.space_id order by booking_id desc`,
+      id
+    );
+    return results;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getActiveByOwnerId = async (id) => {
+  try {
+    const results = await db.any(
+      `select
+      distinct b.*, z.owner_id
+    from
+      bookings b
+    join (
+      select
+        *
+      from
+        properties pr
+      natural join parking_spaces ps
+      where
+        pr.owner_id = $1) z on
+      b.booking_space_id = z.space_id
+    where
+      end_time <= CURRENT_TIMESTAMP + interval '10 hours'
+      and is_occupied = true`,
+      id
+    );
+    return results;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const spaceAndPropInfo = async (pid, uid) => {
   try {
     const spaces = await db.any(
@@ -115,6 +167,26 @@ const updateSpaces = async (args) => {
         })
         .join(", ")} where
         space_id = $${vals.length} RETURNING *`,
+      vals
+    );
+    return Row;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const updateBooking = async (args) => {
+  const booking_id = args.booking_id;
+  let arr = Object.keys(args.setRow);
+  let vals = [...Object.values(args.setRow), booking_id];
+  try {
+    const Row = await db.any(
+      `UPDATE  bookings SET ${arr
+        .map((item, i) => {
+          return `${item} = $${i + 1}`;
+        })
+        .join(", ")} where
+        booking_id = $${vals.length} RETURNING *`,
       vals
     );
     return Row;
@@ -152,7 +224,7 @@ const createProperty = async (body) => {
   }
 };
 
-const createSpaces = async(body) => {
+const createSpaces = async (body) => {
   try {
     await db.tx(async (t) => {
       const queries = body.map((l) => {
@@ -160,13 +232,22 @@ const createSpaces = async(body) => {
           `INSERT INTO 
           parking_spaces(space_owner_id, property_lookup_id, space_no, sp_type, price) 
           VALUES($1, $2, $3, $4, $5)`,
-          [l.space_owner_id, l.property_lookup_id, l.space_no, l.sp_type, l.price]
+          [
+            l.space_owner_id,
+            l.property_lookup_id,
+            l.space_no,
+            l.sp_type,
+            l.price,
+          ]
         );
       });
       await t.batch(queries);
     });
 
-    return { success: true, message: `${body.length} rows inserted successfully` };
+    return {
+      success: true,
+      message: `${body.length} rows inserted successfully`,
+    };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -204,8 +285,11 @@ module.exports = {
   createProperty,
   getPropInfo,
   spaceAndPropInfo,
+  getSoldSpacesByOwnerId,
+  getActiveByOwnerId,
   createSpaces,
   updateSpaces,
+  updateBooking,
   createRenter,
   updateRenterAddress,
 };
