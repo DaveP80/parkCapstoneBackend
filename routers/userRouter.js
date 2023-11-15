@@ -8,6 +8,8 @@ const {
 
 router.get("/profile", userProfile);
 
+router.get("/profile", userProfile);
+
 router.put("/update-address", clientAddressUpdate);
 
 module.exports = router;
