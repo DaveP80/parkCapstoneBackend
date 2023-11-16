@@ -1,6 +1,35 @@
 --
 -- PostgreSQL database dump
 --
+-- Dumped from database version 14.10
+--
+-- Name: cube; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS cube WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION cube; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION cube IS 'data type for multidimensional cubes';
+
+
+--
+-- Name: earthdistance; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS earthdistance WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION earthdistance; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION earthdistance IS 'calculate great-circle distances on the surface of the Earth';
+
+
 --
 -- Name: cube; Type: EXTENSION; Schema: -; Owner: -
 --
@@ -93,6 +122,7 @@ CREATE TABLE public.bookings (
     start_time timestamp without time zone NOT NULL,
     end_time timestamp without time zone,
     is_occupied boolean DEFAULT false,
+    commit_timestamp timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT bookings_rating_check CHECK (((rating >= 1) AND (rating <= 5))),
     CONSTRAINT bookings_time_check CHECK ((end_time > start_time))
 );

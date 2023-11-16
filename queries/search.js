@@ -49,7 +49,7 @@ const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
             a.*,
             count(*) OVER (PARTITION BY property_id) count_spaces,
             avg(price) OVER (PARTITION BY property_id) avg_price,
-            min(price) OVER (PARTITION BY property_id) min_price,
+            min(price) OVER (PARTITION BY property_id) min_price
             (
               SELECT count(*)
               FROM bookings
@@ -203,7 +203,7 @@ const byLatLng = async (args) => {
             z.property_lookup_id = n.property_id
           where
             n.property_id = a.property_id)) occupied,
-        row_number() over(partition by property_id) row_num
+        row_number() over(partition by property_id order by price) row_num
         from
       (
             select
@@ -228,7 +228,7 @@ const byLatLng = async (args) => {
         order by
         point(latitude,
         longitude) <-> point($1,
-         $2), count_spaces`,
+         $2)`,
         args
       );
       return results;
@@ -329,15 +329,13 @@ FROM
 JOIN
   properties s ON p.property_lookup_id = s.property_id
 LEFT JOIN
-  client_user cu ON p.customer_id = cu.id
+  client_user cu ON s.owner_id = cu.id
 LEFT JOIN
   renter_user ru ON p.space_owner_id = ru.renter_id
 WHERE
-  p.space_id = $1; `,
+  p.space_id = $1;`,
       id
     );
-
-    console.log("Query Results:", results);
 
     if (results.length > 0) return results;
     else throw new SQLError("Parking spot not found", 404);

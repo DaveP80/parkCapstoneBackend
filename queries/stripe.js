@@ -1,5 +1,7 @@
 const stripe = require("stripe")(process.env.STRIPE_KEY);
 const db = require("../db/dbConfig");
+
+
 const confirmPmt = async (data) => {
   try {
     const { id, amount, quantity } = data.items[0];
@@ -69,5 +71,5 @@ const newTransaction = async (args) => {
 module.exports = {
   confirmPmt,
   newTransaction,
-  getTransactionsByUserId,
+  getTransactionsByUserId
 };
