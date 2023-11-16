@@ -2,6 +2,7 @@ const {
   byUserId,
   byTimeAndZ,
   byTimeAndPropertyId,
+  byGeoAndTime,
   makeNewBooking,
 } = require("../queries/booking");
 
@@ -28,6 +29,14 @@ const getAvailSpaces = async (req, res) => {
     );
 };
 
+const getAvailSpacesGeo = async (req, res) => {
+  await byGeoAndTime([req.query.lat, req.query.lng, req.query.start, req.query.end])
+    .then((response) => res.json(response))
+    .catch((e) =>
+      res.status(stc(e)).json({ error: e.error, message: e.message })
+    );
+};
+
 const getSpacesByTimeAndPropertyId = async (req, res) => {
   await byTimeAndPropertyId([req.query.pid, req.query.starts, req.query.ends])
     .then((response) => res.json(response))
@@ -47,6 +56,7 @@ const makeNewCheckoutB = async (req, res) => {
 module.exports = {
   getBookings,
   getAvailSpaces,
+  getAvailSpacesGeo,
   getSpacesByTimeAndPropertyId,
   makeNewCheckoutB,
 };

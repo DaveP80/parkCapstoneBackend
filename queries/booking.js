@@ -167,6 +167,59 @@ const byTimeAndZ = async (args) => {
   }
 };
 
+const byGeoAndTime = async (args) => {
+      try {
+        const results = await db.any(
+          `select
+          a.*,
+          count(*) over(partition by property_id) count_spaces,
+          row_number() over(partition by property_id) row_num
+        from
+          (
+          select
+            ps.space_id,
+            ps.space_no,
+            ps.sp_type,
+            ps.last_used,
+            ps.price,
+            pr.prop_address,
+            pr.property_id,
+            pr.zip,
+            pr.billing_type,
+            pr.latitude,
+            pr.longitude,
+            pr.picture
+          from
+            parking_spaces ps
+          join properties pr on
+            ps.property_lookup_id = pr.property_id
+          where
+            pr.location_verified = true
+            and space_id not in 
+                            (
+            select
+              booking_space_id
+            from
+              bookings
+            where
+              booking_space_id = space_id
+              and ((start_time,
+              end_time) 
+                        overlaps ('${args[2]}',
+                        '${args[3]}')))) a
+        order by
+          point(latitude,
+          longitude) <-> point($1,
+          $2),
+          count_spaces desc`,
+          args
+        );
+      return results;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const byTimeAndPropertyId = async (args) => {
   try {
     const results = await db.any(
@@ -264,6 +317,7 @@ const makeNewBooking = async (id, args) => {
 module.exports = {
   byUserId,
   byTimeAndZ,
+  byGeoAndTime,
   byTimeAndPropertyId,
   makeNewBooking,
 };

@@ -181,6 +181,61 @@ const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
     throw e;
   }
 };
+const byLatLng = async (args) => {
+  try {
+      const results = await db.any(
+        `select
+        a.*,
+        count(*) over(partition by property_id) count_spaces,
+        (
+        select
+          count(*)
+        from
+          bookings
+        where
+          is_occupied = true
+          and booking_space_id in (
+          select
+            space_id
+          from
+            parking_spaces z
+          join properties n on
+            z.property_lookup_id = n.property_id
+          where
+            n.property_id = a.property_id)) occupied,
+        row_number() over(partition by property_id) row_num
+        from
+      (
+            select
+            ps.space_id,
+            ps.space_no,
+            ps.sp_type,
+            ps.last_used,
+            pr.latitude,
+            pr.longitude,
+            ps.price,
+            pr.prop_address,
+            pr.property_id,
+            pr.zip,
+            pr.billing_type
+            from
+              parking_spaces ps
+            join properties pr on
+              ps.property_lookup_id = pr.property_id
+            where
+              pr.location_verified = true
+        ) a
+        order by
+        point(latitude,
+        longitude) <-> point($1,
+         $2), count_spaces`,
+        args
+      );
+      return results;
+  } catch (e) {
+    throw e;
+  }
+};
 
 const byAddr = async (addr) => {
   [addr, zip] = removeZipCode(addr);
@@ -358,6 +413,7 @@ module.exports = {
   byAddr,
   byAddrB,
   byZipOrAddr,
+  byLatLng,
   byOccupied,
   bySpaceId,
 };

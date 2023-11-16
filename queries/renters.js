@@ -205,17 +205,21 @@ const createProperty = async (body) => {
         zip,
         number_spaces,
         billing_type,
+        latitude,
+        longitude,
         picture,
         location_verified
         )
-      values ($1, $2, $3, $4, $5, $6, true) returning *`,
+      values ($1, $2, $3, $4, $5, $6, $7, $8, true) returning *`,
       [
         body.owner_id,
         body.prop_address,
         body.zip,
         body.number_spaces,
         body.billing_type,
-        body.picture,
+        body.latitude,
+        body.longitude,
+        body.picture
       ]
     );
     return update[0];

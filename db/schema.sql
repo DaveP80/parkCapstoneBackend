@@ -2,6 +2,34 @@
 -- PostgreSQL database dump
 --
 --
+-- Name: cube; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS cube WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION cube; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION cube IS 'data type for multidimensional cubes';
+
+
+--
+-- Name: earthdistance; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS earthdistance WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION earthdistance; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION earthdistance IS 'calculate great-circle distances on the surface of the Earth';
+
+
+--
 -- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -16,7 +44,7 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 
 
 --
--- Name: insert_auth_user(); Type: FUNCTION; Schema: public; Owner: cars_dx8r_user
+-- Name: insert_auth_user(); Type: FUNCTION; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE FUNCTION public.insert_auth_user() RETURNS trigger
@@ -30,14 +58,14 @@ END;
 $$;
 
 
-ALTER FUNCTION public.insert_auth_user() OWNER TO cars_dx8r_user;
+ALTER FUNCTION public.insert_auth_user() OWNER TO parking_i5nr_user;
 
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: auth_users; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+-- Name: auth_users; Type: TABLE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TABLE public.auth_users (
@@ -50,10 +78,10 @@ CREATE TABLE public.auth_users (
 );
 
 
-ALTER TABLE public.auth_users OWNER TO cars_dx8r_user;
+ALTER TABLE public.auth_users OWNER TO parking_i5nr_user;
 
 --
--- Name: bookings; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+-- Name: bookings; Type: TABLE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TABLE public.bookings (
@@ -70,10 +98,10 @@ CREATE TABLE public.bookings (
 );
 
 
-ALTER TABLE public.bookings OWNER TO cars_dx8r_user;
+ALTER TABLE public.bookings OWNER TO parking_i5nr_user;
 
 --
--- Name: bookings_booking_id_seq; Type: SEQUENCE; Schema: public; Owner: cars_dx8r_user
+-- Name: bookings_booking_id_seq; Type: SEQUENCE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE SEQUENCE public.bookings_booking_id_seq
@@ -85,17 +113,17 @@ CREATE SEQUENCE public.bookings_booking_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.bookings_booking_id_seq OWNER TO cars_dx8r_user;
+ALTER TABLE public.bookings_booking_id_seq OWNER TO parking_i5nr_user;
 
 --
--- Name: bookings_booking_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: cars_dx8r_user
+-- Name: bookings_booking_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER SEQUENCE public.bookings_booking_id_seq OWNED BY public.bookings.booking_id;
 
 
 --
--- Name: client_user; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+-- Name: client_user; Type: TABLE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TABLE public.client_user (
@@ -115,10 +143,10 @@ CREATE TABLE public.client_user (
 );
 
 
-ALTER TABLE public.client_user OWNER TO cars_dx8r_user;
+ALTER TABLE public.client_user OWNER TO parking_i5nr_user;
 
 --
--- Name: client_user_client_id_seq; Type: SEQUENCE; Schema: public; Owner: cars_dx8r_user
+-- Name: client_user_client_id_seq; Type: SEQUENCE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE SEQUENCE public.client_user_client_id_seq
@@ -130,17 +158,17 @@ CREATE SEQUENCE public.client_user_client_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.client_user_client_id_seq OWNER TO cars_dx8r_user;
+ALTER TABLE public.client_user_client_id_seq OWNER TO parking_i5nr_user;
 
 --
--- Name: client_user_client_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: cars_dx8r_user
+-- Name: client_user_client_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER SEQUENCE public.client_user_client_id_seq OWNED BY public.client_user.id;
 
 
 --
--- Name: parking_spaces; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces; Type: TABLE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TABLE public.parking_spaces (
@@ -160,10 +188,10 @@ CREATE TABLE public.parking_spaces (
 );
 
 
-ALTER TABLE public.parking_spaces OWNER TO cars_dx8r_user;
+ALTER TABLE public.parking_spaces OWNER TO parking_i5nr_user;
 
 --
--- Name: parking_spaces_space_id_seq; Type: SEQUENCE; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces_space_id_seq; Type: SEQUENCE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE SEQUENCE public.parking_spaces_space_id_seq
@@ -175,17 +203,17 @@ CREATE SEQUENCE public.parking_spaces_space_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.parking_spaces_space_id_seq OWNER TO cars_dx8r_user;
+ALTER TABLE public.parking_spaces_space_id_seq OWNER TO parking_i5nr_user;
 
 --
--- Name: parking_spaces_space_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces_space_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER SEQUENCE public.parking_spaces_space_id_seq OWNED BY public.parking_spaces.space_id;
 
 
 --
--- Name: payment_transactions; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+-- Name: payment_transactions; Type: TABLE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TABLE public.payment_transactions (
@@ -197,10 +225,10 @@ CREATE TABLE public.payment_transactions (
 );
 
 
-ALTER TABLE public.payment_transactions OWNER TO cars_dx8r_user;
+ALTER TABLE public.payment_transactions OWNER TO parking_i5nr_user;
 
 --
--- Name: properties; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+-- Name: properties; Type: TABLE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TABLE public.properties (
@@ -212,27 +240,52 @@ CREATE TABLE public.properties (
     picture text,
     location_verified boolean DEFAULT false NOT NULL,
     billing_type text,
+    latitude double precision,
+    longitude double precision,
     CONSTRAINT properties_billing_type_check CHECK ((billing_type = ANY (ARRAY['fixed'::text, 'hourly'::text]))),
     CONSTRAINT properties_number_spaces_check CHECK (((number_spaces >= 1) AND (number_spaces <= 10)))
 );
 
 
-ALTER TABLE public.properties OWNER TO cars_dx8r_user;
+ALTER TABLE public.properties OWNER TO parking_i5nr_user;
 
 --
--- Name: refresh_tokens; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+-- Name: refresh_tokens; Type: TABLE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TABLE public.refresh_tokens (
     client_id integer NOT NULL,
-    token text
+    token text,
+    refresh_token_id integer NOT NULL
 );
 
 
-ALTER TABLE public.refresh_tokens OWNER TO cars_dx8r_user;
+ALTER TABLE public.refresh_tokens OWNER TO parking_i5nr_user;
 
 --
--- Name: renter_user; Type: TABLE; Schema: public; Owner: cars_dx8r_user
+-- Name: refresh_tokens_refresh_token_id_seq; Type: SEQUENCE; Schema: public; Owner: parking_i5nr_user
+--
+
+CREATE SEQUENCE public.refresh_tokens_refresh_token_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.refresh_tokens_refresh_token_id_seq OWNER TO parking_i5nr_user;
+
+--
+-- Name: refresh_tokens_refresh_token_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: parking_i5nr_user
+--
+
+ALTER SEQUENCE public.refresh_tokens_refresh_token_id_seq OWNED BY public.refresh_tokens.refresh_token_id;
+
+
+--
+-- Name: renter_user; Type: TABLE; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TABLE public.renter_user (
@@ -246,31 +299,38 @@ CREATE TABLE public.renter_user (
 );
 
 
-ALTER TABLE public.renter_user OWNER TO cars_dx8r_user;
+ALTER TABLE public.renter_user OWNER TO parking_i5nr_user;
 
 --
--- Name: bookings booking_id; Type: DEFAULT; Schema: public; Owner: cars_dx8r_user
+-- Name: bookings booking_id; Type: DEFAULT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.bookings ALTER COLUMN booking_id SET DEFAULT nextval('public.bookings_booking_id_seq'::regclass);
 
 
 --
--- Name: client_user id; Type: DEFAULT; Schema: public; Owner: cars_dx8r_user
+-- Name: client_user id; Type: DEFAULT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.client_user ALTER COLUMN id SET DEFAULT nextval('public.client_user_client_id_seq'::regclass);
 
 
 --
--- Name: parking_spaces space_id; Type: DEFAULT; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces space_id; Type: DEFAULT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.parking_spaces ALTER COLUMN space_id SET DEFAULT nextval('public.parking_spaces_space_id_seq'::regclass);
 
 
 --
--- Name: auth_users auth_users_user_email_key; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: refresh_tokens refresh_token_id; Type: DEFAULT; Schema: public; Owner: parking_i5nr_user
+--
+
+ALTER TABLE ONLY public.refresh_tokens ALTER COLUMN refresh_token_id SET DEFAULT nextval('public.refresh_tokens_refresh_token_id_seq'::regclass);
+
+
+--
+-- Name: auth_users auth_users_user_email_key; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.auth_users
@@ -278,7 +338,7 @@ ALTER TABLE ONLY public.auth_users
 
 
 --
--- Name: auth_users auth_users_user_id_key; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: auth_users auth_users_user_id_key; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.auth_users
@@ -286,7 +346,7 @@ ALTER TABLE ONLY public.auth_users
 
 
 --
--- Name: bookings bookings_pkey; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: bookings bookings_pkey; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.bookings
@@ -294,7 +354,7 @@ ALTER TABLE ONLY public.bookings
 
 
 --
--- Name: client_user client_user_email_key; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: client_user client_user_email_key; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.client_user
@@ -302,7 +362,7 @@ ALTER TABLE ONLY public.client_user
 
 
 --
--- Name: client_user client_user_pkey; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: client_user client_user_pkey; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.client_user
@@ -310,7 +370,7 @@ ALTER TABLE ONLY public.client_user
 
 
 --
--- Name: parking_spaces parking_spaces_pkey; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces parking_spaces_pkey; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.parking_spaces
@@ -318,7 +378,7 @@ ALTER TABLE ONLY public.parking_spaces
 
 
 --
--- Name: properties properties_pkey; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: properties properties_pkey; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.properties
@@ -326,15 +386,15 @@ ALTER TABLE ONLY public.properties
 
 
 --
--- Name: refresh_tokens refresh_tokens_token_key; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: refresh_tokens refresh_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.refresh_tokens
-    ADD CONSTRAINT refresh_tokens_token_key UNIQUE (token);
+    ADD CONSTRAINT refresh_tokens_pkey PRIMARY KEY (refresh_token_id);
 
 
 --
--- Name: renter_user renter_user_renter_email_key; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: renter_user renter_user_renter_email_key; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.renter_user
@@ -342,7 +402,7 @@ ALTER TABLE ONLY public.renter_user
 
 
 --
--- Name: payment_transactions unique_booking_id; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: payment_transactions unique_booking_id; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.payment_transactions
@@ -350,7 +410,7 @@ ALTER TABLE ONLY public.payment_transactions
 
 
 --
--- Name: client_user unique_client_user; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: client_user unique_client_user; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.client_user
@@ -358,7 +418,7 @@ ALTER TABLE ONLY public.client_user
 
 
 --
--- Name: properties unique_owner_address_zip; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: properties unique_owner_address_zip; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.properties
@@ -366,7 +426,7 @@ ALTER TABLE ONLY public.properties
 
 
 --
--- Name: parking_spaces unique_sp_no_prop_id; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces unique_sp_no_prop_id; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.parking_spaces
@@ -374,7 +434,7 @@ ALTER TABLE ONLY public.parking_spaces
 
 
 --
--- Name: parking_spaces unique_space_id_no; Type: CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces unique_space_id_no; Type: CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.parking_spaces
@@ -382,14 +442,14 @@ ALTER TABLE ONLY public.parking_spaces
 
 
 --
--- Name: client_user users_insert_trigger; Type: TRIGGER; Schema: public; Owner: cars_dx8r_user
+-- Name: client_user users_insert_trigger; Type: TRIGGER; Schema: public; Owner: parking_i5nr_user
 --
 
 CREATE TRIGGER users_insert_trigger AFTER INSERT ON public.client_user FOR EACH ROW EXECUTE FUNCTION public.insert_auth_user();
 
 
 --
--- Name: bookings bookings_booking_space_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: bookings bookings_booking_space_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.bookings
@@ -397,7 +457,7 @@ ALTER TABLE ONLY public.bookings
 
 
 --
--- Name: bookings bookings_customer_booking_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: bookings bookings_customer_booking_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.bookings
@@ -405,7 +465,7 @@ ALTER TABLE ONLY public.bookings
 
 
 --
--- Name: properties fk_property_owner_id; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: properties fk_property_owner_id; Type: FK CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.properties
@@ -413,7 +473,7 @@ ALTER TABLE ONLY public.properties
 
 
 --
--- Name: parking_spaces fk_space_owner; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces fk_space_owner; Type: FK CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.parking_spaces
@@ -421,7 +481,7 @@ ALTER TABLE ONLY public.parking_spaces
 
 
 --
--- Name: parking_spaces fk_space_property_id; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: parking_spaces fk_space_property_id; Type: FK CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.parking_spaces
@@ -429,7 +489,7 @@ ALTER TABLE ONLY public.parking_spaces
 
 
 --
--- Name: payment_transactions payment_transactions_pmt_booking_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: payment_transactions payment_transactions_pmt_booking_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.payment_transactions
@@ -437,7 +497,7 @@ ALTER TABLE ONLY public.payment_transactions
 
 
 --
--- Name: payment_transactions payment_transactions_user_pmt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: payment_transactions payment_transactions_user_pmt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.payment_transactions
@@ -445,7 +505,7 @@ ALTER TABLE ONLY public.payment_transactions
 
 
 --
--- Name: renter_user renter_user_renter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cars_dx8r_user
+-- Name: renter_user renter_user_renter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: parking_i5nr_user
 --
 
 ALTER TABLE ONLY public.renter_user
