@@ -67,7 +67,6 @@ const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
                 ps.space_id,
                 ps.space_no,
                 ps.sp_type,
-                ps.last_used,
                 ps.price,
                 pr.prop_address,
                 pr.property_id,
@@ -112,7 +111,6 @@ const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
               ps.space_id,
               ps.space_no,
               ps.sp_type,
-              ps.last_used,
               ps.price,
               pr.prop_address,
               pr.property_id,
@@ -210,7 +208,6 @@ const byLatLng = async (args) => {
             ps.space_id,
             ps.space_no,
             ps.sp_type,
-            ps.last_used,
             pr.latitude,
             pr.longitude,
             ps.price,
@@ -224,11 +221,7 @@ const byLatLng = async (args) => {
               ps.property_lookup_id = pr.property_id
             where
               pr.location_verified = true
-        ) a
-        order by
-        point(latitude,
-        longitude) <-> point($1,
-         $2)`,
+        ) a`,
         args
       );
       return results;
@@ -380,7 +373,6 @@ from
   ps.space_id,
   ps.space_no,
   ps.sp_type,
-  ps.last_used,
   ps.price,
   pr.prop_address,
   pr.property_id,
