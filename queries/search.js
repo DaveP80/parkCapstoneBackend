@@ -33,41 +33,54 @@ const getAll = async () => {
   }
 };
 //get properties and their spaces and information about how many of their spaces are unoccupied
-const byZipOrAddr = async (zipCode, addr) => {
+const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
   let requery = false;
+
   try {
+    let orderByClause = "";
+    if (sortByPrice) {
+      orderByClause = "ORDER BY avg_price DESC";
+    }
+
     if (zipCode?.length) {
       try {
         const results = await db.any(
-          `select
-      a.*,
-      count(*) over(partition by property_id) count_spaces,
-      avg(price) over(partition by property_id) avg_price,
-      min(price) over(partition by property_id) min_price,
-      (select count(*) from bookings where is_occupied = true and booking_space_id in (select space_id from parking_spaces z join properties n on z.property_lookup_id = n.property_id where n.property_id = a.property_id)) occupied,
-      row_number() over(partition by property_id) row_num
-    from
-      (
-      select
-      ps.space_id,
-      ps.space_no,
-      ps.sp_type,
-      ps.last_used,
-      ps.price,
-      pr.prop_address,
-      pr.property_id,
-      pr.zip,
-      pr.billing_type
-      from
-        parking_spaces ps
-      join properties pr on
-        ps.property_lookup_id = pr.property_id
-      where
-        pr.location_verified = true
-      ) a
-    order by
-      count_spaces desc`
+          `SELECT
+            a.*,
+            count(*) OVER (PARTITION BY property_id) count_spaces,
+            avg(price) OVER (PARTITION BY property_id) avg_price,
+            min(price) OVER (PARTITION BY property_id) min_price,
+            (
+              SELECT count(*)
+              FROM bookings
+              WHERE is_occupied = true AND booking_space_id IN (
+                SELECT space_id
+                FROM parking_spaces z
+                JOIN properties n ON z.property_lookup_id = n.property_id
+                WHERE n.property_id = a.property_id
+              )
+            ) occupied,
+            row_number() OVER (PARTITION BY property_id) row_num
+          FROM
+            (
+              SELECT
+                ps.space_id,
+                ps.space_no,
+                ps.sp_type,
+                ps.last_used,
+                ps.price,
+                pr.prop_address,
+                pr.property_id,
+                pr.zip,
+                pr.billing_type
+              FROM
+                parking_spaces ps
+              JOIN properties pr ON ps.property_lookup_id = pr.property_id
+              WHERE pr.location_verified = true
+            ) a
+          ${orderByClause}`
         );
+
         if (results.length > 0) {
           let res = results.filter((item) => item.row_num == 1);
 
@@ -75,10 +88,10 @@ const byZipOrAddr = async (zipCode, addr) => {
             zipCode,
             res.map((item) => item.zip)
           );
-      
-          if (rzips.length > 0) return results.filter(item => rzips.includes(item.zip));
+
+          if (rzips.length > 0)
+            return results.filter((item) => rzips.includes(item.zip));
           else requery = true;
-          //return results.filter(item => item.row_num == 1);
         } else if (!results.length) {
           requery = true;
         }
@@ -86,41 +99,51 @@ const byZipOrAddr = async (zipCode, addr) => {
         throw new SQLError("no matches or sql syntax error");
       }
     }
+
     if (requery || !zipCode?.length) {
       try {
         const [addres, zip] = removeZipCode(addr);
         let termsarr = addres;
         let substrings = splitStringIntoSubstrings(termsarr);
+
         try {
           const results = await db.any(`
-      select
-      ps.space_id,
-      ps.space_no,
-      ps.sp_type,
-      ps.last_used,
-      ps.price,
-      pr.prop_address,
-      pr.property_id,
-      pr.zip,
-      pr.billing_type,
-      pr.picture,
-      count(*) over(partition by property_id) count_spaces,
-      avg(price) over(partition by property_id) avg_price,
-      min(price) over(partition by property_id) min_price,
-      row_number() over(partition by property_id) row_num,
-      (select count(*) from bookings where is_occupied = true and booking_space_id in (select space_id from parking_spaces z join properties n on z.property_lookup_id = n.property_id where n.property_id = pr.property_id)) occupied
-    from
-      parking_spaces ps
-    join properties pr on
-      ps.property_lookup_id = pr.property_id
-    where
-      pr.location_verified = true`);
+            SELECT
+              ps.space_id,
+              ps.space_no,
+              ps.sp_type,
+              ps.last_used,
+              ps.price,
+              pr.prop_address,
+              pr.property_id,
+              pr.zip,
+              pr.billing_type,
+              pr.picture,
+              count(*) OVER (PARTITION BY property_id) count_spaces,
+              avg(price) OVER (PARTITION BY property_id) avg_price,
+              min(price) OVER (PARTITION BY property_id) min_price,
+              row_number() OVER (PARTITION BY property_id) row_num,
+              (
+                SELECT count(*)
+                FROM bookings
+                WHERE is_occupied = true AND booking_space_id IN (
+                  SELECT space_id
+                  FROM parking_spaces z
+                  JOIN properties n ON z.property_lookup_id = n.property_id
+                  WHERE n.property_id = pr.property_id
+                )
+              ) occupied
+            FROM
+              parking_spaces ps
+            JOIN properties pr ON ps.property_lookup_id = pr.property_id
+            WHERE pr.location_verified = true
+            ${orderByClause}`);
+
           if (!results?.length) {
             throw new SQLError("no data in spaces table");
           }
 
           let resultarr = [];
-
           let stringset = {};
 
           for (let s of substrings) {
@@ -133,8 +156,12 @@ const byZipOrAddr = async (zipCode, addr) => {
               }
             }
           }
+
           for (let g of results) {
-            if (stringset.hasOwnProperty(g.property_id) && stringset[g.property_id] > 2) {
+            if (
+              stringset.hasOwnProperty(g.property_id) &&
+              stringset[g.property_id] > 2
+            ) {
               resultarr.push({ count_match: stringset[g.property_id], ...g });
             }
           }
@@ -233,20 +260,34 @@ const byAddrB = async (addr) => {
 const bySpaceId = async (id) => {
   try {
     const results = await db.any(
-      `SELECT p.*, s.*, 
-      cu.first_name AS client_first_name, cu.last_name AS client_last_name, cu.email AS client_email, 
-      ru.renter_id, ru.renter_address, ru.renter_email
-FROM parking_spaces p
-JOIN properties s ON p.property_lookup_id = s.property_id
-LEFT JOIN client_user cu ON p.customer_id = cu.id
-LEFT JOIN renter_user ru ON p.customer_id = ru.renter_id
-WHERE p.space_id = $1`,
+      `SELECT
+  p.*,
+  s.*,
+  cu.first_name AS client_first_name,
+  cu.last_name AS client_last_name,
+  cu.email AS client_email,
+  ru.renter_id,
+  ru.renter_address,
+  ru.renter_email
+FROM
+  parking_spaces p
+JOIN
+  properties s ON p.property_lookup_id = s.property_id
+LEFT JOIN
+  client_user cu ON p.customer_id = cu.id
+LEFT JOIN
+  renter_user ru ON p.space_owner_id = ru.renter_id
+WHERE
+  p.space_id = $1; `,
       id
     );
-    if (results.length>0) return results;
+
+    console.log("Query Results:", results);
+
+    if (results.length > 0) return results;
     else throw new SQLError("Parking spot not found", 404);
   } catch (e) {
-    if(e instanceof SQLError) throw e;
+    if (e instanceof SQLError) throw e;
     else throw e;
   }
 };
@@ -318,5 +359,5 @@ module.exports = {
   byAddrB,
   byZipOrAddr,
   byOccupied,
-  bySpaceId
+  bySpaceId,
 };
