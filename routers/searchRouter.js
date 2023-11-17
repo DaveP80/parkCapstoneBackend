@@ -4,18 +4,23 @@ const router = express.Router();
 const {
   getSpaceByZA,
   getSpaceByAddrB,
+  getSpaceByLatLng,
   getSpaceByZip,
   getSpaceByIsOccupied,
 } = require("../controllers/searchController");
 
 const getAllSpaces = require("../controllers/heroController");
-const { getSpacesByTimeAndPropertyId, getAvailSpaces } = require("../controllers/bookingController");
+const { getSpacesByTimeAndPropertyId, getAvailSpaces, getAvailSpacesGeo } = require("../controllers/bookingController");
 
 router.get("/address/a", getSpaceByZA);
+
+router.get("/geolocation", getSpaceByLatLng);
 
 router.get("/checkout/a", getSpacesByTimeAndPropertyId);
 
 router.get("/landing", getAvailSpaces);
+
+router.get("/location-and-time", getAvailSpacesGeo);
 
 router.post("/zip/z", getSpaceByZip);
 

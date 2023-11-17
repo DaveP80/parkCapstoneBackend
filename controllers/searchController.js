@@ -3,12 +3,21 @@ const {
   byAddrB,
   byOccupied,
   byZip,
+  byLatLng
 } = require("../queries/search");
 
 const { stc } = require("../lib/helper/helper");
 //Search Endpoint for MainImage search bar.
 const getSpaceByZA = async (req, res) => {
   await byZipOrAddr(req.query.zipCode, req.query.addr)
+    .then((response) => res.json(response))
+    .catch((e) =>
+      res.status(stc(e)).json({ error: e.error, message: e.message })
+    );
+};
+
+const getSpaceByLatLng = async (req, res) => {
+  await byLatLng([req.query.lat, req.query.lng])
     .then((response) => res.json(response))
     .catch((e) =>
       res.status(stc(e)).json({ error: e.error, message: e.message })
@@ -52,6 +61,7 @@ const getSpaceByIsOccupied = async (req, res) => {
 module.exports = {
   getSpaceByZA,
   getSpaceByAddrB,
+  getSpaceByLatLng,
   getSpaceByZip,
   getSpaceByIsOccupied,
 };

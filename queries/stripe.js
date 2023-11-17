@@ -45,44 +45,26 @@ const newTransaction = async (args) => {
          VALUES ($1, $2, $3) RETURNING pmt_id;`,
         args
       );
+      // pmt is verified.
+      await t.none(
+        `
+          UPDATE client_user
+          SET pmt_verified = true
+          WHERE id = $1;`, args
+      );
 
       return newTransactionId;
     });
 
     return {
       success: true,
-      message: `payment for booking_id: ${2}`,
+      message: `payment for booking_id: ${args[2]}`,
       pmt_id: result.pmt_id,
     };
   } catch (error) {
     return { success: false, error: error.message };
   }
 };
-
-
-// const newTransaction = async (args) => {
-//   let newTransactionId;
-//   try {
-//     await db.tx(async (t) => {
-//       const query = `
-//           insert into payment_transactions(user_pmt_id, expiry, pmt_booking_id)
-//           values ($1, $2, $3) returning pmt_id;`;
-//       try {
-//         const result = await t.one(query, args);
-//         newTransactionId = result.pmt_id;
-//       } catch (error) {
-//         throw error;
-//       }
-//     });
-//     return {
-//       success: true,
-//       message: `payment for booking_id: ${2}`,
-//       pmt_id: newTransactionId,
-//     };
-//   } catch (error) {
-//     throw error;
-//   }
-// };
 
 module.exports = {
   confirmPmt,
