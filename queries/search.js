@@ -181,8 +181,8 @@ const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
 };
 const byLatLng = async (args) => {
   try {
-      const results = await db.any(
-        `select
+    const results = await db.any(
+      `select
         a.*,
         count(*) over(partition by property_id) count_spaces,
         (
@@ -222,9 +222,9 @@ const byLatLng = async (args) => {
             where
               pr.location_verified = true
         ) a`,
-        args
-      );
-      return results;
+      args
+    );
+    return results;
   } catch (e) {
     throw e;
   }
