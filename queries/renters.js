@@ -16,7 +16,6 @@ const htmlContent = `
 
 const createRenter = async (data) => {
   const { id, email } = data;
-  console.log(data);
 
   try {
     const res = await db.any(

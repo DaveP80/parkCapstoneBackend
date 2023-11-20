@@ -173,7 +173,7 @@ const byGeoAndTime = async (args) => {
           `select
           a.*,
           count(*) over(partition by property_id) count_spaces,
-          row_number() over(partition by property_id) row_num
+          row_number() over(partition by property_id order by price) row_num
         from
           (
           select
@@ -225,7 +225,7 @@ const byTimeAndPropertyId = async (args) => {
     const results = await db.any(
       `select
           a.*,
-          count(*) over(partition by property_id) count_spaces,
+          count(*) over() count_spaces,
           row_number() over(partition by sp_type) row_num
       from
           (
@@ -261,7 +261,7 @@ const byTimeAndPropertyId = async (args) => {
                 overlaps ('${args[1]}',
                   '${args[2]}')) and is_occupied = true)) a
       order by
-          count_spaces desc`,
+          price`,
       args
       //$2 start_time
       //$3 end_time
