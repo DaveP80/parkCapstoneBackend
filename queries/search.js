@@ -319,9 +319,8 @@ const bySpaceId = async (id) => {
       `SELECT
   p.*,
   s.*,
-  cu.first_name AS client_first_name,
-  cu.last_name AS client_last_name,
-  cu.email AS client_email,
+  cu.first_name AS owner_first_name,
+  cu.last_name AS owner_last_name,
   ru.renter_id,
   ru.renter_address,
   ru.renter_email
