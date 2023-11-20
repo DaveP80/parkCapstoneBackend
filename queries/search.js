@@ -185,6 +185,7 @@ const byLatLng = async (args) => {
       `select
         a.*,
         count(*) over(partition by property_id) count_spaces,
+        row_number() over(partition by property_id order by price) row_num,
         (
         select
           count(*)
