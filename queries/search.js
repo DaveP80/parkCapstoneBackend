@@ -319,9 +319,8 @@ const bySpaceId = async (id) => {
       `SELECT
   p.*,
   s.*,
-  cu.first_name AS client_first_name,
-  cu.last_name AS client_last_name,
-  cu.email AS client_email,
+  cu.first_name AS owner_first_name,
+  cu.last_name AS owner_last_name,
   ru.renter_id,
   ru.renter_address,
   ru.renter_email
@@ -330,11 +329,11 @@ FROM
 JOIN
   properties s ON p.property_lookup_id = s.property_id
 LEFT JOIN
-  client_user cu ON p.customer_id = cu.id
+  client_user cu ON s.owner_id = cu.id
 LEFT JOIN
   renter_user ru ON p.space_owner_id = ru.renter_id
 WHERE
-  p.space_id = $1; `,
+  p.space_id = 50; `,
       id
     );
 
