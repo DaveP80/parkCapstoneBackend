@@ -14,7 +14,7 @@ const {
 const byUserId = async (args) => {
   try {
     const results = await db.any(
-      `select * from bookings where customer_booking_id = $1 order by is_occupied, end_time desc`,
+      `select * from bookings where customer_booking_id = $1 order by is_occupied desc, end_time desc`,
       args
     );
 
@@ -40,7 +40,6 @@ const byTimeAndZ = async (args) => {
               ps.space_id,
               ps.space_no,
               ps.sp_type,
-              ps.last_used,
               ps.price,
               pr.prop_address,
               pr.property_id,
@@ -98,7 +97,6 @@ const byTimeAndZ = async (args) => {
       ps.space_id,
       ps.space_no,
       ps.sp_type,
-      ps.last_used,
       ps.price,
       pr.prop_address,
       pr.property_id,
@@ -180,7 +178,6 @@ const byGeoAndTime = async (args) => {
             ps.space_id,
             ps.space_no,
             ps.sp_type,
-            ps.last_used,
             ps.price,
             pr.prop_address,
             pr.property_id,
@@ -208,9 +205,6 @@ const byGeoAndTime = async (args) => {
                         overlaps ('${args[2]}',
                         '${args[3]}')))) a
         order by
-          point(latitude,
-          longitude) <-> point($1,
-          $2),
           count_spaces desc`,
           args
         );
@@ -233,13 +227,14 @@ const byTimeAndPropertyId = async (args) => {
               ps.space_id,
               ps.space_no,
               ps.sp_type,
-              ps.last_used,
               ps.price,
               pr.owner_id,
               pr.prop_address,
               pr.property_id,
               pr.zip,
               pr.billing_type,
+              pr.latitude,
+              pr.longitude,
               pr.picture
           from
               parking_spaces ps
@@ -274,23 +269,24 @@ const byTimeAndPropertyId = async (args) => {
 
 const makeNewBooking = async (id, args) => {
   let newBookingId;
+  let newBookingSId;
   try {
     await db.tx(async (t) => {
       const query = `
           insert into bookings(customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied)
           values (
             $1,
-            (select space_id from parking_spaces where space_id = $2 and space_id not in (
+            (select space_id from parking_spaces where space_id in (${args[0].join(',')}) and space_id not in (
               select
               booking_space_id
           from
               bookings
           where
-              booking_space_id = $2
+              booking_space_id in (${args[0].join(',')})
               and ((start_time,
               end_time) 
             overlaps ('${args[2]}',
-              '${args[3]}')) and is_occupied = true)), $3, $4, $5, true) RETURNING booking_id;`;
+              '${args[3]}')) and is_occupied = true) limit 1), $3, $4, $5, true) RETURNING booking_id, booking_space_id;`;
       try {
         const result = await t.one(query, [
           id,
@@ -300,6 +296,7 @@ const makeNewBooking = async (id, args) => {
           args[3],
         ]);
         newBookingId = result.booking_id;
+        newBookingSId = result.booking_space_id;
       } catch (error) {
         throw error;
       }
@@ -308,6 +305,7 @@ const makeNewBooking = async (id, args) => {
       success: true,
       message: `inserted row with booking_space_id: ${args[0]}, start_time: ${args[2]}`,
       booking_id: newBookingId,
+      booking_space_id: newBookingSId
     };
   } catch (error) {
     throw error;
