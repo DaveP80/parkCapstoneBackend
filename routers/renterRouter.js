@@ -10,7 +10,8 @@ const {
   updateBookingStatus,
   getPropAndSpaceInfo,
   getActiveBookings,
-  getSoldSpaces
+  getSoldSpaces,
+  getEarningsByOwnerId
 } = require("../controllers/renterController");
 
 router.get("/get-yourinfo", getPropertyInfo);
@@ -20,6 +21,8 @@ router.get("/get-soldbookings", getSoldSpaces);
 router.get("/get-bookingactivity", getActiveBookings);
 
 router.get("/get-property-with-spaceinfo", getPropAndSpaceInfo);
+
+router.get("/get-totalearnings", getEarningsByOwnerId);
 
 router.post("/create-property", createNewProperty);
 

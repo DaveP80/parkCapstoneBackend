@@ -101,7 +101,8 @@ const getSoldSpacesByOwnerId = async (id) => {
         *
       from
         properties pr
-      natural join parking_spaces ps
+      join parking_spaces ps
+      on pr.property_id = ps.property_lookup_id
       where
         pr.owner_id = $1) z on
       b.booking_space_id = z.space_id order by booking_id desc`,
@@ -117,7 +118,15 @@ const getActiveByOwnerId = async (id) => {
   try {
     const results = await db.any(
       `select
-      distinct b.*, z.owner_id
+      distinct b.booking_id,
+      b.customer_booking_id,
+      b.booking_space_id,
+      b.final_cost,
+      b.rating,
+      cast(b.start_time as timestamptz) AS start_time,
+      cast(b.end_time as timestamptz) AS end_time,
+      b.is_occupied,
+      z.owner_id
     from
       bookings b
     join (
@@ -125,13 +134,45 @@ const getActiveByOwnerId = async (id) => {
         *
       from
         properties pr
-      natural join parking_spaces ps
+      join parking_spaces ps on
+      pr.property_id = ps.property_lookup_id
       where
         pr.owner_id = $1) z on
       b.booking_space_id = z.space_id
     where
       end_time <= CURRENT_TIMESTAMP + interval '10 hours'
       and is_occupied = true`,
+      id
+    );
+    return results;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getEarningsByOId = async (id) => {
+  try {
+    const results = await db.any(
+      `select
+      ($1) as owner_id,
+      booking_id,
+      final_cost,
+      sum(final_cost) over()
+    from
+      (
+      select
+        booking_id,
+        final_cost
+      from
+        properties p
+      join parking_spaces ps on
+        p.property_id = ps.property_lookup_id
+      join bookings z on
+        z.booking_space_id = ps.space_id
+      join payment_transactions pt on
+        z.booking_id = pt.pmt_booking_id
+      where
+        p.owner_id = $1) b order by booking_id desc limit 1`,
       id
     );
     return results;
@@ -295,4 +336,5 @@ module.exports = {
   updateBooking,
   createRenter,
   updateRenterAddress,
+  getEarningsByOId
 };

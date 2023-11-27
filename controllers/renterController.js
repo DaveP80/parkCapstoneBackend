@@ -9,6 +9,7 @@ const {
   getSoldSpacesByOwnerId,
   getActiveByOwnerId,
   updateRenterAddress,
+  getEarningsByOId
 } = require("../queries/renters");
 
 const { parsedMessage, stc } = require("../lib/helper/helper");
@@ -92,6 +93,16 @@ const getActiveBookings = async (req, res, next) => {
     });
 };
 
+const getEarningsByOwnerId = async (req, res, next) => {
+  await getEarningsByOId(req.user_id)
+    .then((response) => {
+      res.status(200).json(response);
+    })
+    .catch((e) => {
+      res.status(stc(e)).json({ message: e.message, error: e.error });
+    });
+};
+
 const createRenterFunc = async (req, res, next) => {
   createRenter(req.body)
     .then((response) => {
@@ -123,4 +134,5 @@ module.exports = {
   updateBookingStatus,
   createRenterFunc,
   renterAddressUpdate,
+  getEarningsByOwnerId
 };
