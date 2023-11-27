@@ -1,35 +1,6 @@
 --
 -- PostgreSQL database dump
 --
--- Dumped from database version 14.10
---
--- Name: cube; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS cube WITH SCHEMA public;
-
-
---
--- Name: EXTENSION cube; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION cube IS 'data type for multidimensional cubes';
-
-
---
--- Name: earthdistance; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS earthdistance WITH SCHEMA public;
-
-
---
--- Name: EXTENSION earthdistance; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION earthdistance IS 'calculate great-circle distances on the surface of the Earth';
-
-
 --
 -- Name: cube; Type: EXTENSION; Schema: -; Owner: -
 --
@@ -207,12 +178,10 @@ CREATE TABLE public.parking_spaces (
     property_lookup_id uuid,
     space_no integer,
     sp_type text,
-    last_used timestamp with time zone,
     customer_id integer DEFAULT '-1'::integer NOT NULL,
     price double precision DEFAULT 15.00 NOT NULL,
     address text,
     CONSTRAINT parking_spaces_check CHECK ((customer_id <> space_owner_id)),
-    CONSTRAINT parking_spaces_last_used_check CHECK ((last_used <= now())),
     CONSTRAINT parking_spaces_sp_type_check CHECK ((sp_type = ANY (ARRAY['car'::text, 'truck'::text]))),
     CONSTRAINT parking_spaces_space_no_check CHECK (((space_no >= 1) AND (space_no <= 10)))
 );

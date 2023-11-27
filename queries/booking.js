@@ -203,7 +203,7 @@ const byGeoAndTime = async (args) => {
               and ((start_time,
               end_time) 
                         overlaps ('${args[2]}',
-                        '${args[3]}')))) a
+                        '${args[3]}')) and is_occupied = true)) a
         order by
           count_spaces desc`,
           args
