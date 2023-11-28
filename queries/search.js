@@ -308,15 +308,19 @@ const byAddrB = async (addr) => {
 const bySpaceId = async (id) => {
   try {
     const results = await db.any(
-      `SELECT
+      `
+      with cte as (
+        select property_lookup_id from parking_spaces where space_id = $1
+      )
+      SELECT
   p.*,
   s.*,
   cu.first_name AS client_first_name,
   cu.last_name AS client_last_name,
-  cu.email AS client_email,
   ru.renter_id,
   ru.renter_address,
-  ru.renter_email
+  ru.renter_email,
+  round(rating, 2) rating
 FROM
   parking_spaces p
 JOIN
@@ -325,6 +329,9 @@ LEFT JOIN
   client_user cu ON s.owner_id = cu.id
 LEFT JOIN
   renter_user ru ON p.space_owner_id = ru.renter_id
+natural join
+  (select avg(rating) rating from bookings where booking_space_id in (select space_id from 
+    parking_spaces w where w.property_lookup_id = (select property_lookup_id from cte))) av
 WHERE
   p.space_id = $1;`,
       id

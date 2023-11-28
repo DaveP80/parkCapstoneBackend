@@ -3,7 +3,7 @@ const {
   byTimeAndZ,
   byTimeAndPropertyId,
   byGeoAndTime,
-  makeNewBooking,
+  makeNewBooking
 } = require("../queries/booking");
 
 const { stc } = require("../lib/helper/helper");
