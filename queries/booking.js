@@ -14,7 +14,17 @@ const {
 const byUserId = async (args) => {
   try {
     const results = await db.any(
-      `select * from bookings where customer_booking_id = $1 order by is_occupied desc, end_time desc`,
+      `select 
+      b.booking_id, 
+      b.customer_booking_id, 
+      b.booking_space_id, 
+      b.final_cost, 
+      b.rating, 
+      b.final_cost, 
+      cast(b.start_time as timestamptz),
+      cast(b.end_time as timestamptz),
+      b.is_occupied 
+      from bookings b where customer_booking_id = $1 order by is_occupied desc, end_time desc`,
       args
     );
 
@@ -317,5 +327,5 @@ module.exports = {
   byTimeAndZ,
   byGeoAndTime,
   byTimeAndPropertyId,
-  makeNewBooking,
+  makeNewBooking
 };
