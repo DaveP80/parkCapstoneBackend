@@ -29,7 +29,7 @@ const {
   const insertTransaction = async (req, res, next) => {
     console.log(req.user_id, ...req.body.data);
 
-    newTransaction([req.user_id, ...req.body.data])
+    newTransaction([req.user_id, ...req.body.data], req.body.email)
       .then((response) => {
         res.status(200).json(response);
       })

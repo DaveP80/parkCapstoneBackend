@@ -1,5 +1,47 @@
 const stripe = require("stripe")(process.env.STRIPE_KEY);
 const db = require("../db/dbConfig");
+const nodemailer = require("nodemailer");
+
+const htmlContent = `
+  <html>
+    <body>
+      <h3>Details</h3>
+      <p>address: $(address)</p>
+      <p>space_no: $(space_no)</p>
+      <p>booking ID: $(booking_id)</p>
+      <p>start time: $(start_time)</p>
+      <a href="$(url)" target="_blank">More Info</a>
+    </body>
+  </html>
+`;
+
+const sendConfEmail = async(email) => {
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    auth: {
+      user: process.env.EMAIL_ADD,
+      pass: process.env.PASS,
+    },
+  });
+  const mailOptions = {
+    from: process.env.EMAIL_ADD,
+    to: email[3],
+    subject: `your new parking space is ready`,
+    html: htmlContent
+      .replace(
+        "$(url)",
+        process.env.NODE_ENV === "development"
+          ? `http://localhost:3000/admin`
+          : `https://incandescent-rabanadas-11bbf8.netlify.app/admin`
+      )
+      .replace("$(address)", email[1])
+      .replace("$(space_no)", email[2][0][0].space_no)
+      .replace("$(booking_id)", email[0])
+      .replace("$(start_time)", `${new Date(email[2][2]).toLocaleDateString()} ${new Date(email[2][2]).toLocaleTimeString()}`)
+  };
+
+    await transporter.sendMail(mailOptions);
+}
 
 
 const confirmPmt = async (data) => {
@@ -38,7 +80,7 @@ const getTransactionsByUserId = async (id) => {
   }
 };
 
-const newTransaction = async (args) => {
+const newTransaction = async (args, email) => {
   try {
     const result = await db.tx(async (t) => {
       const newTransactionId = await t.one(
@@ -57,6 +99,8 @@ const newTransaction = async (args) => {
 
       return newTransactionId;
     });
+
+    await sendConfEmail(email);
 
     return {
       success: true,
