@@ -37,7 +37,7 @@ const sendConfEmail = async(email) => {
       .replace("$(address)", email[1])
       .replace("$(space_no)", email[2][0][0].space_no)
       .replace("$(booking_id)", email[0])
-      .replace("$(start_time)", `${new Date(email[2][2]).toLocaleDateString()} ${new Date(email[2][2]).toLocaleTimeString()}`)
+      .replace("$(start_time)", email[2][1])
   };
 
     await transporter.sendMail(mailOptions);

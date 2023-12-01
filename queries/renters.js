@@ -7,7 +7,6 @@ const htmlContent = `
   <html>
     <body>
       <h3>Hello, World!</h3>
-      <h2>Hello, World!</h2>
       $(firstName) $(lastName)
       <a href="$(url)" target="_blank">Confirm your Account</a>
     </body>
@@ -196,9 +195,9 @@ const spaceAndPropInfo = async (pid, uid) => {
 };
 
 const updateSpaces = async (args) => {
-  const space_id = args.space_id;
+
   let arr = Object.keys(args.setRow);
-  let vals = [...Object.values(args.setRow), space_id];
+  let vals = Object.values(args.setRow);
   try {
     const Row = await db.any(
       `UPDATE  parking_spaces SET ${arr
@@ -206,7 +205,7 @@ const updateSpaces = async (args) => {
           return `${item} = $${i + 1}`;
         })
         .join(", ")} where
-        space_id = $${vals.length} RETURNING *`,
+        space_id in (${args.spaceIds.join(",")})`,
       vals
     );
     return Row;
