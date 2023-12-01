@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db/dbConfig");
 const nodemailer = require("nodemailer");
+require("dotenv").config();
+
 const {
   UserAlreadyExistsError,
   EmailHostError,
@@ -43,16 +45,16 @@ const createUser = async (data) => {
   try {
     const checkLogs = await db.any(
       `select * from auth_users where user_email ilike $1`,
-      email
+      email,
     );
     if (checkLogs[0]) {
       throw new UserAlreadyExistsError(
-        `Cannot register with a previously used email: ${email}`
+        `Cannot register with a previously used email: ${email}`,
       );
     }
     const res = await db.any(
       `insert into client_user(first_name, last_name, address, email, password) values ($1, $2, $3, $4, $5) returning *`,
-      [first_name, last_name, address, email, hashedPassword]
+      [first_name, last_name, address, email, hashedPassword],
     );
 
     if (res[0]) {
@@ -65,7 +67,7 @@ const createUser = async (data) => {
           id: res[0]["id"],
         },
         process.env.JWT_TOKEN_SECRET_KEY,
-        { expiresIn: "7d" }
+        { expiresIn: "7d" },
       );
 
       const transporter = nodemailer.createTransport({
@@ -85,7 +87,7 @@ const createUser = async (data) => {
             "$(url)",
             process.env.NODE_ENV === "development"
               ? `http://localhost:3000/confirmation?k=${jwtToken}`
-              : `https://incandescent-rabanadas-11bbf8.netlify.app/confirmation?k=${jwtToken}`
+              : `https://carvalet.netlify.app/confirmation?k=${jwtToken}`,
           )
           .replace("$(firstName)", first_name)
           .replace("$(lastName)", last_name),
@@ -105,7 +107,7 @@ const createUser = async (data) => {
       throw error;
     } else
       throw new UserAlreadyExistsError(
-        `User with email ${email} already exists.`
+        `User with email ${email} already exists.`,
       );
   }
 };
@@ -131,7 +133,7 @@ const login = async (data) => {
     where
       c.email ilike $1
       and c.is_auth = true`,
-      email
+      email,
     );
 
     if (foundUser.length === 0) {
@@ -144,7 +146,7 @@ const login = async (data) => {
       if (!comparedPassword) {
         throw new PasswordError(
           "unauthorized",
-          "Please check your email and password"
+          "Please check your email and password",
         );
       } else {
         let jwtToken = jwt.sign(
@@ -153,7 +155,7 @@ const login = async (data) => {
             email: user.email,
           },
           process.env.JWT_TOKEN_SECRET_KEY,
-          { expiresIn: "15m" }
+          { expiresIn: "15m" },
         );
 
         let jwtTokenRefresh = jwt.sign(
@@ -162,12 +164,12 @@ const login = async (data) => {
             email: user.email,
           },
           process.env.JWT_TOKENREF_SECRET_KEY,
-          { expiresIn: 180 * 24 * 60 * 60 }
+          { expiresIn: 180 * 24 * 60 * 60 },
         );
 
         await db.any(
           `insert into refresh_tokens(client_id, token) values ($1, $2) returning *`,
-          [user.id, jwtTokenRefresh]
+          [user.id, jwtTokenRefresh],
         );
 
         return {
@@ -187,7 +189,7 @@ const authLogin = async (id, is_renter) => {
     const auUser = await db.any(
       //set client_user is_auth to true
       `Update client_user set is_auth = true where id in (select id from client_user where id=$1 and is_auth=false) returning *`,
-      id
+      id,
     );
 
     if (auUser.length === 0) {
@@ -198,11 +200,7 @@ const authLogin = async (id, is_renter) => {
         try {
           const makeRenter = await db.any(
             `insert into renter_user(renter_id, renter_address, renter_email) values ((select id from client_user where id = $1), $2, $3) returning *`,
-            [
-              sqlArr.id,
-              sqlArr.address,
-              sqlArr.email,
-            ]
+            [sqlArr.id, sqlArr.address, sqlArr.email],
           );
 
           sqlArr["renterInfo"] = makeRenter[0];
@@ -248,12 +246,12 @@ const getInfo = async (args) => {
       c.id = r.renter_id
     join auth_users au on
       c.id = au.user_id`,
-      args
+      args,
     );
     if (userJoin.length === 0) {
       throw new TokenError(
         "Invalid lookup id",
-        "refresh token not found in db"
+        "refresh token not found in db",
       );
     } else {
       return { ...userJoin[0], roles: getRoles(userJoin[0]) };
@@ -269,7 +267,7 @@ const getInfo = async (args) => {
   }
 };
 
-const getByEmail = async(email) => {
+const getByEmail = async (email) => {
   try {
     const result = await db.any(
       `select
@@ -285,14 +283,13 @@ const getByEmail = async(email) => {
       auth_users
     where
       user_email ilike $1`,
-       email 
-    )
+      email,
+    );
     return result;
-
-  } catch(e) {
+  } catch (e) {
     throw e;
   }
-}
+};
 
 const updateClientAddress = async (addr, id, role) => {
   try {
@@ -304,13 +301,13 @@ const updateClientAddress = async (addr, id, role) => {
       client_background_verified = true
     where
       id = $2 returning *`,
-      [addr, id]
+      [addr, id],
     );
     if (update.length == 0) throw new SQLError("Invalid client entry");
     if (role == true) {
       await db.any(
         `update auth_users set all_is_auth = true where user_id = $1 returning *`,
-        update[0].id
+        update[0].id,
       );
       return {
         message: `updated client address and all_is_auth`,
