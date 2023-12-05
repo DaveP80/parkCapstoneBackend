@@ -7,7 +7,6 @@ const htmlContent = `
   <html>
     <body>
       <h3>Hello, World!</h3>
-      <h2>Hello, World!</h2>
       $(firstName) $(lastName)
       <a href="$(url)" target="_blank">Confirm your Account</a>
     </body>
