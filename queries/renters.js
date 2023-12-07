@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const db = require("../db/dbConfig");
 const nodemailer = require("nodemailer");
+require("dotenv").config();
 const { SQLError } = require("../lib/errorHandler/customErrors");
 
 const htmlContent = `
@@ -19,7 +20,7 @@ const createRenter = async (data) => {
   try {
     const res = await db.any(
       `insert into renter_user(renter_id, renter_address, renter_email) values ((select id from client_user where id = $1), (select address from client_user where id = $1), $2) returning *`,
-      [id, email]
+      [id, email],
     );
 
     if (res[0]) {
@@ -31,7 +32,7 @@ const createRenter = async (data) => {
           id: res[0]["renter_id"],
         },
         process.env.JWT_TOKEN_SECRET_KEY,
-        { expiresIn: "7d" }
+        { expiresIn: "7d" },
       );
 
       const transporter = nodemailer.createTransport({
@@ -49,7 +50,7 @@ const createRenter = async (data) => {
         html: htmlContent
           .replace(
             "$(url)",
-            `http://localhost:3001/users/create-user/auth?k=${jwtToken}`
+            `http://localhost:3001/users/create-user/auth?k=${jwtToken}`,
           )
           .replace("$(firstName)", first_name)
           .replace("$(lastName)", last_name),
@@ -79,7 +80,7 @@ const getPropInfo = async (data) => {
   try {
     const results = await db.any(
       `select * from properties where owner_id = $1`,
-      data
+      data,
     );
     return results;
   } catch (e) {
@@ -105,7 +106,7 @@ const getSoldSpacesByOwnerId = async (id) => {
       where
         pr.owner_id = $1) z on
       b.booking_space_id = z.space_id order by booking_id desc`,
-      id
+      id,
     );
     return results;
   } catch (e) {
@@ -141,7 +142,7 @@ const getActiveByOwnerId = async (id) => {
     where
       end_time <= CURRENT_TIMESTAMP + interval '10 hours'
       and is_occupied = true`,
-      id
+      id,
     );
     return results;
   } catch (e) {
@@ -172,7 +173,7 @@ const getEarningsByOId = async (id) => {
         z.booking_id = pt.pmt_booking_id
       where
         p.owner_id = $1) b order by booking_id desc limit 1`,
-      id
+      id,
     );
     return results;
   } catch (e) {
@@ -186,7 +187,7 @@ const spaceAndPropInfo = async (pid, uid) => {
       `select ps.*, case when space_id in (select booking_space_id from bookings where is_occupied = true) then 1 else null end as occupied, min(price) over(partition by sp_type) min_price_overtype from parking_spaces ps join 
       properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true and property_lookup_id = $1 and 
       space_owner_id = $2 order by space_no asc`,
-      [pid, uid]
+      [pid, uid],
     );
     return spaces;
   } catch (e) {
@@ -195,7 +196,6 @@ const spaceAndPropInfo = async (pid, uid) => {
 };
 
 const updateSpaces = async (args) => {
-
   let arr = Object.keys(args.setRow);
   let vals = Object.values(args.setRow);
   try {
@@ -206,7 +206,7 @@ const updateSpaces = async (args) => {
         })
         .join(", ")} where
         space_id in (${args.spaceIds.join(",")})`,
-      vals
+      vals,
     );
     return Row;
   } catch (e) {
@@ -226,7 +226,7 @@ const updateBooking = async (args) => {
         })
         .join(", ")} where
         booking_id = $${vals.length} RETURNING *`,
-      vals
+      vals,
     );
     return Row;
   } catch (e) {
@@ -258,8 +258,8 @@ const createProperty = async (body) => {
         body.billing_type,
         body.latitude,
         body.longitude,
-        body.picture
-      ]
+        body.picture,
+      ],
     );
     return update[0];
   } catch (e) {
@@ -281,7 +281,7 @@ const createSpaces = async (body) => {
             l.space_no,
             l.sp_type,
             l.price,
-          ]
+          ],
         );
       });
       await t.batch(queries);
@@ -306,12 +306,12 @@ const updateRenterAddress = async (addr, id) => {
       background_verified = true
     where
       renter_id = $2 returning *`,
-      [addr, id]
+      [addr, id],
     );
     if (update.length == 0) throw new SQLError("Invalid renter entry");
     await db.any(
       `update auth_users set all_is_auth = true where user_id = $1 returning *`,
-      update[0].renter_id
+      update[0].renter_id,
     );
     return {
       message: `updated renter address`,
@@ -335,5 +335,5 @@ module.exports = {
   updateBooking,
   createRenter,
   updateRenterAddress,
-  getEarningsByOId
+  getEarningsByOId,
 };

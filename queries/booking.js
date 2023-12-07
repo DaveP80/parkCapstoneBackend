@@ -25,7 +25,7 @@ const byUserId = async (args) => {
       cast(b.end_time as timestamptz),
       b.is_occupied 
       from bookings b where customer_booking_id = $1 order by is_occupied desc, end_time desc`,
-      args
+      args,
     );
 
     return results;
@@ -76,14 +76,14 @@ const byTimeAndZ = async (args) => {
                   '${args[3]}')))) a
       order by
           count_spaces desc`,
-          [args[2], args[3]]
+          [args[2], args[3]],
           //$1 start_time
           //$2 end_time
         );
         if (results.length > 0) {
           let rzips = closeZipCodes(
             args[0],
-            results.map((item) => item.zip)
+            results.map((item) => item.zip),
           );
           let rest = results.filter((item) => rzips.includes(item.zip));
           if (rest.length > 0) return rest;
@@ -130,7 +130,7 @@ const byTimeAndZ = async (args) => {
             and ((start_time,
             end_time) 
           overlaps ('${args[2]}',
-            '${args[3]}')))`
+            '${args[3]}')))`,
           );
           if (!results?.length) {
             throw new SQLError("no data in spaces table");
@@ -176,9 +176,9 @@ const byTimeAndZ = async (args) => {
 };
 
 const byGeoAndTime = async (args) => {
-      try {
-        const results = await db.any(
-          `select
+  try {
+    const results = await db.any(
+      `select
           a.*,
           count(*) over(partition by property_id) count_spaces,
           row_number() over(partition by property_id order by price) row_num
@@ -216,9 +216,9 @@ const byGeoAndTime = async (args) => {
                         '${args[3]}')) and is_occupied = true)) a
         order by
           count_spaces desc`,
-          args
-        );
-      return results;
+      args,
+    );
+    return results;
   } catch (e) {
     throw e;
   }
@@ -267,7 +267,7 @@ const byTimeAndPropertyId = async (args) => {
                   '${args[2]}')) and is_occupied = true)) a
       order by
           price`,
-      args
+      args,
       //$2 start_time
       //$3 end_time
     );
@@ -286,17 +286,21 @@ const makeNewBooking = async (id, args) => {
           insert into bookings(customer_booking_id, booking_space_id, final_cost, start_time, end_time, is_occupied)
           values (
             $1,
-            (select space_id from parking_spaces where space_id in (${args[0].join(',')}) and space_id not in (
+            (select space_id from parking_spaces where space_id in (${args[0].join(
+              ",",
+            )}) and space_id not in (
               select
               booking_space_id
           from
               bookings
           where
-              booking_space_id in (${args[0].join(',')})
+              booking_space_id in (${args[0].join(",")})
               and ((start_time,
               end_time) 
             overlaps ('${args[2]}',
-              '${args[3]}')) and is_occupied = true) limit 1), $3, $4, $5, true) RETURNING booking_id, booking_space_id;`;
+              '${
+                args[3]
+              }')) and is_occupied = true) limit 1), $3, $4, $5, true) RETURNING booking_id, booking_space_id;`;
       try {
         const result = await t.one(query, [
           id,
@@ -315,7 +319,7 @@ const makeNewBooking = async (id, args) => {
       success: true,
       message: `inserted row with booking_space_id: ${args[0]}, start_time: ${args[2]}`,
       booking_id: newBookingId,
-      booking_space_id: newBookingSId
+      booking_space_id: newBookingSId,
     };
   } catch (error) {
     throw error;
@@ -327,5 +331,5 @@ module.exports = {
   byTimeAndZ,
   byGeoAndTime,
   byTimeAndPropertyId,
-  makeNewBooking
+  makeNewBooking,
 };

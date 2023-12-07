@@ -1,6 +1,7 @@
 const stripe = require("stripe")(process.env.STRIPE_KEY);
 const db = require("../db/dbConfig");
 const nodemailer = require("nodemailer");
+require("dotenv").config();
 
 const htmlContent = `
   <html>
@@ -15,7 +16,7 @@ const htmlContent = `
   </html>
 `;
 
-const sendConfEmail = async(email) => {
+const sendConfEmail = async (email) => {
   const transporter = nodemailer.createTransport({
     service: "Gmail",
     auth: {
@@ -32,17 +33,16 @@ const sendConfEmail = async(email) => {
         "$(url)",
         process.env.NODE_ENV === "development"
           ? `http://localhost:3000/admin`
-          : `https://incandescent-rabanadas-11bbf8.netlify.app/admin`
+          : `https://carvalet.netlify.app/admin`,
       )
       .replace("$(address)", email[1])
       .replace("$(space_no)", email[2][0][0].space_no)
       .replace("$(booking_id)", email[0])
-      .replace("$(start_time)", email[2][1])
+      .replace("$(start_time)", email[2][1]),
   };
 
-    await transporter.sendMail(mailOptions);
-}
-
+  await transporter.sendMail(mailOptions);
+};
 
 const confirmPmt = async (data) => {
   try {
@@ -72,7 +72,7 @@ const getTransactionsByUserId = async (id) => {
   try {
     const results = await db.any(
       `select * from payment_transactions where user_pmt_id = $1 order by timestamp desc, pmt_booking_id`,
-      id
+      id,
     );
     return results;
   } catch (e) {
@@ -87,14 +87,15 @@ const newTransaction = async (args, email) => {
         `
          INSERT INTO payment_transactions(user_pmt_id, expiry, pmt_booking_id)
          VALUES ($1, $2, $3) RETURNING pmt_id;`,
-        args
+        args,
       );
       // pmt is verified.
       await t.none(
         `
           UPDATE client_user
           SET pmt_verified = true
-          WHERE id = $1;`, args
+          WHERE id = $1;`,
+        args,
       );
 
       return newTransactionId;
@@ -115,5 +116,5 @@ const newTransaction = async (args, email) => {
 module.exports = {
   confirmPmt,
   newTransaction,
-  getTransactionsByUserId
+  getTransactionsByUserId,
 };
