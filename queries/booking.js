@@ -26,7 +26,7 @@ const byUserId = async (args) => {
       b.is_occupied,
 (select prop_address from properties where property_id in(select property_lookup_id from parking_spaces where space_id = b.booking_space_id) limit 1) prop_address
       from bookings b where customer_booking_id = $1 order by is_occupied desc, end_time desc`,
-      args,
+      args
     );
 
     return results;
@@ -77,14 +77,14 @@ const byTimeAndZ = async (args) => {
                   '${args[3]}')))) a
       order by
           count_spaces desc`,
-          [args[2], args[3]],
+          [args[2], args[3]]
           //$1 start_time
           //$2 end_time
         );
         if (results.length > 0) {
           let rzips = closeZipCodes(
             args[0],
-            results.map((item) => item.zip),
+            results.map((item) => item.zip)
           );
           let rest = results.filter((item) => rzips.includes(item.zip));
           if (rest.length > 0) return rest;
@@ -131,7 +131,7 @@ const byTimeAndZ = async (args) => {
             and ((start_time,
             end_time) 
           overlaps ('${args[2]}',
-            '${args[3]}')))`,
+            '${args[3]}')))`
           );
           if (!results?.length) {
             throw new SQLError("no data in spaces table");
@@ -217,7 +217,7 @@ const byGeoAndTime = async (args) => {
                         '${args[3]}')) and is_occupied = true)) a
         order by
           count_spaces desc`,
-      args,
+      args
     );
     return results;
   } catch (e) {
@@ -268,7 +268,7 @@ const byTimeAndPropertyId = async (args) => {
                   '${args[2]}')) and is_occupied = true)) a
       order by
           price`,
-      args,
+      args
       //$2 start_time
       //$3 end_time
     );
@@ -288,7 +288,7 @@ const makeNewBooking = async (id, args) => {
           values (
             $1,
             (select space_id from parking_spaces where space_id in (${args[0].join(
-              ",",
+              ","
             )}) and space_id not in (
               select
               booking_space_id

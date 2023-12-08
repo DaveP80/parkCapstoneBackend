@@ -9,6 +9,7 @@ const userRouter = require("./routers/userRouter");
 const renterRouter = require("./routers/renterRouter");
 const searchRouter = require("./routers/searchRouter");
 const parkingSpotRouter = require("./routers/parkingSpotRouter");
+const spotDetailsRouter = require("./routers/spotDetailsRouter");
 const pmtRouter = require("./routers/pmtRouter");
 const mapsRouter = require("./routers/mapsRouter");
 const bookingRouter = require("./routers/bookingRouter");
@@ -39,6 +40,8 @@ app.use("/get-spaces", searchRouter);
 app.use(verifyJWT);
 
 app.use("/parking-spots", parkingSpotRouter);
+
+app.use("/spot-details", spotDetailsRouter);
 
 app.use("/user", userRouter);
 
