@@ -39,9 +39,9 @@ app.use("/get-spaces", searchRouter);
 
 app.use(verifyJWT);
 
-app.use("/parking-spots", parkingSpotRouter);
-
 app.use("/spot-details", spotDetailsRouter);
+
+app.use("/parking-spots", parkingSpotRouter);
 
 app.use("/user", userRouter);
 

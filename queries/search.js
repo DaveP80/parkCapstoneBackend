@@ -346,6 +346,44 @@ WHERE
   }
 };
 
+const getSpotDetailsByIdQuery = async (id) => {
+  try {
+    const results = await db.any(
+      `
+      SELECT
+        p.*,
+        s.*,
+        cu.first_name AS client_first_name,
+        cu.last_name AS client_last_name,
+        ru.renter_id,
+        ru.renter_address,
+        ru.renter_email,
+        round(rating, 2) rating,
+        b.*  -- Include booking-related columns
+      FROM
+        parking_spaces p
+      JOIN
+        properties s ON p.property_lookup_id = s.property_id
+      LEFT JOIN
+        client_user cu ON s.owner_id = cu.id
+      LEFT JOIN
+        renter_user ru ON p.space_owner_id = ru.renter_id
+      LEFT JOIN
+        bookings b ON p.space_id = b.booking_space_id  -- Join with bookings table
+      WHERE
+        p.space_id = $1;
+      `,
+      id
+    );
+
+    if (results.length > 0) return results;
+    else throw new SQLError("Parking spot not found", 404);
+  } catch (e) {
+    if (e instanceof SQLError) throw e;
+    else throw e;
+  }
+};
+
 const byOccupied = async (args) => {
   try {
     const results = await db.any(
@@ -414,4 +452,5 @@ module.exports = {
   byLatLng,
   byOccupied,
   bySpaceId,
+  getSpotDetailsByIdQuery,
 };
