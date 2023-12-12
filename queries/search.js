@@ -181,8 +181,8 @@ const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
 };
 const byLatLng = async (args) => {
   try {
-      const results = await db.any(
-        `select
+    const results = await db.any(
+      `select
         a.*,
         count(*) over(partition by property_id) count_spaces,
         (
@@ -222,9 +222,9 @@ const byLatLng = async (args) => {
             where
               pr.location_verified = true
         ) a`,
-        args
-      );
-      return results;
+      args
+    );
+    return results;
   } catch (e) {
     throw e;
   }
@@ -310,9 +310,9 @@ const bySpaceId = async (id) => {
     const results = await db.any(
       `
       with cte as (
-        select property_lookup_id from parking_spaces where space_id = $1
-      )
-      SELECT
+  select property_lookup_id from parking_spaces where space_id = $1
+)
+SELECT
   p.*,
   s.*,
   cu.first_name AS client_first_name,
@@ -333,7 +333,46 @@ natural join
   (select avg(rating) rating from bookings where booking_space_id in (select space_id from 
     parking_spaces w where w.property_lookup_id = (select property_lookup_id from cte))) av
 WHERE
-  p.space_id = $1;`,
+  p.space_id = $1;
+`,
+      id
+    );
+
+    if (results.length > 0) return results;
+    else throw new SQLError("Parking spot not found", 404);
+  } catch (e) {
+    if (e instanceof SQLError) throw e;
+    else throw e;
+  }
+};
+
+const getSpotDetailsByIdQuery = async (id) => {
+  try {
+    const results = await db.any(
+      `
+      SELECT
+        p.*,
+        s.*,
+        cu.first_name AS client_first_name,
+        cu.last_name AS client_last_name,
+        ru.renter_id,
+        ru.renter_address,
+        ru.renter_email,
+        round(rating, 2) rating,
+        b.*  -- Include booking-related columns
+      FROM
+        parking_spaces p
+      JOIN
+        properties s ON p.property_lookup_id = s.property_id
+      LEFT JOIN
+        client_user cu ON s.owner_id = cu.id
+      LEFT JOIN
+        renter_user ru ON p.space_owner_id = ru.renter_id
+      LEFT JOIN
+        bookings b ON p.space_id = b.booking_space_id  -- Join with bookings table
+      WHERE
+        p.space_id = $1;
+      `,
       id
     );
 
@@ -413,4 +452,5 @@ module.exports = {
   byLatLng,
   byOccupied,
   bySpaceId,
+  getSpotDetailsByIdQuery,
 };
