@@ -23,10 +23,11 @@ const byUserId = async (args) => {
       b.final_cost, 
       cast(b.start_time as timestamptz),
       cast(b.end_time as timestamptz),
+      case when b.booking_id in (select pmt_booking_id from payment_transactions) then true else false end as isactive,
       b.is_occupied,
 (select prop_address from properties where property_id in(select property_lookup_id from parking_spaces where space_id = b.booking_space_id) limit 1) prop_address
       from bookings b where customer_booking_id = $1 order by is_occupied desc, end_time desc`,
-      args
+      args,
     );
 
     return results;
@@ -77,14 +78,14 @@ const byTimeAndZ = async (args) => {
                   '${args[3]}')))) a
       order by
           count_spaces desc`,
-          [args[2], args[3]]
+          [args[2], args[3]],
           //$1 start_time
           //$2 end_time
         );
         if (results.length > 0) {
           let rzips = closeZipCodes(
             args[0],
-            results.map((item) => item.zip)
+            results.map((item) => item.zip),
           );
           let rest = results.filter((item) => rzips.includes(item.zip));
           if (rest.length > 0) return rest;
@@ -131,7 +132,7 @@ const byTimeAndZ = async (args) => {
             and ((start_time,
             end_time) 
           overlaps ('${args[2]}',
-            '${args[3]}')))`
+            '${args[3]}')))`,
           );
           if (!results?.length) {
             throw new SQLError("no data in spaces table");
@@ -175,49 +176,93 @@ const byTimeAndZ = async (args) => {
     throw e;
   }
 };
-
+//Main Landing page search function
 const byGeoAndTime = async (args) => {
   try {
     const results = await db.any(
-      `select
-          a.*,
-          count(*) over(partition by property_id) count_spaces,
-          row_number() over(partition by property_id order by price) row_num
-        from
-          (
-          select
-            ps.space_id,
-            ps.space_no,
-            ps.sp_type,
-            ps.price,
-            pr.prop_address,
-            pr.property_id,
-            pr.zip,
-            pr.billing_type,
-            pr.latitude,
-            pr.longitude,
-            pr.picture
-          from
-            parking_spaces ps
-          join properties pr on
-            ps.property_lookup_id = pr.property_id
-          where
-            pr.location_verified = true
-            and space_id not in 
+      `with cte as (
+select
+	a.*,
+  true as available,
+	count(*) over(partition by property_id) count_spaces,
+	row_number() over(partition by property_id
+order by
+	price) row_num
+from
+	(
+	select
+		ps.space_id,
+		ps.space_no,
+		ps.sp_type,
+		ps.price,
+		pr.prop_address,
+		pr.property_id,
+		pr.zip,
+		pr.billing_type,
+		pr.latitude,
+		pr.longitude,
+		pr.picture
+	from
+		parking_spaces ps
+	join properties pr on
+		ps.property_lookup_id = pr.property_id
+	where
+		pr.location_verified = true
+		and space_id not in 
                             (
-            select
-              booking_space_id
-            from
-              bookings
-            where
-              booking_space_id = space_id
-              and ((start_time,
-              end_time) 
+		select
+			booking_space_id
+		from
+			bookings
+		where
+			booking_space_id = space_id
+			and ((start_time,
+			end_time) 
                         overlaps ('${args[2]}',
-                        '${args[3]}')) and is_occupied = true)) a
-        order by
-          count_spaces desc`,
-      args
+			'${args[3]}'))
+				and is_occupied = true)) a
+order by
+	count_spaces desc)
+        select
+	*
+from
+	cte
+union 
+select
+	a.*,
+  false as available,
+	count(*) over(partition by property_id) count_spaces,
+	row_number() over(partition by property_id
+order by
+	price) row_num
+from
+	(
+	select
+		ps.space_id,
+		ps.space_no,
+		ps.sp_type,
+		ps.price,
+		pr.prop_address,
+		pr.property_id,
+		pr.zip,
+		pr.billing_type,
+		pr.latitude,
+		pr.longitude,
+		pr.picture
+	from
+		parking_spaces ps
+	join properties pr on
+		ps.property_lookup_id = pr.property_id
+	where
+		pr.location_verified = true
+		and pr.property_id not in (
+		select
+			property_id
+		from
+			cte
+)) a 
+        `,
+      args,
     );
     return results;
   } catch (e) {
@@ -268,7 +313,7 @@ const byTimeAndPropertyId = async (args) => {
                   '${args[2]}')) and is_occupied = true)) a
       order by
           price`,
-      args
+      args,
       //$2 start_time
       //$3 end_time
     );
@@ -288,7 +333,7 @@ const makeNewBooking = async (id, args) => {
           values (
             $1,
             (select space_id from parking_spaces where space_id in (${args[0].join(
-              ","
+              ",",
             )}) and space_id not in (
               select
               booking_space_id
