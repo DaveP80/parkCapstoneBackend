@@ -23,10 +23,13 @@ const byUserId = async (args) => {
       b.final_cost, 
       cast(b.start_time as timestamptz),
       cast(b.end_time as timestamptz),
-      case when b.booking_id in (select pmt_booking_id from payment_transactions) then true else false end as isactive,
+      case when pt.pmt_id is not null then true else false end as isactive,
       b.is_occupied,
+      pt.pmt_id,
+      pt.expiry,
+      pt.timestamp,
 (select prop_address from properties where property_id in(select property_lookup_id from parking_spaces where space_id = b.booking_space_id) limit 1) prop_address
-      from bookings b where customer_booking_id = $1 order by is_occupied desc, end_time desc`,
+      from bookings b left join payment_transactions pt on b.booking_id = pt.pmt_booking_id where customer_booking_id = $1 order by is_occupied desc, end_time desc`,
       args,
     );
 

@@ -68,10 +68,12 @@ const confirmPmt = async (data) => {
   }
 };
 
-const getTransactionsByUserId = async (id) => {
+const getTransactionsByUserId = async (id, booking_id) => {
   try {
     const results = await db.any(
-      `select * from payment_transactions where user_pmt_id = $1 order by timestamp desc, pmt_booking_id`,
+      `select * from payment_transactions where user_pmt_id = $1 ${
+        booking_id ? `and pmt_booking_id = ${booking_id} ` : ""
+      }order by timestamp desc, pmt_booking_id`,
       id,
     );
     return results;
