@@ -77,7 +77,7 @@ const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
               JOIN properties pr ON ps.property_lookup_id = pr.property_id
               WHERE pr.location_verified = true
             ) a
-          ${orderByClause}`
+          ${orderByClause}`,
         );
 
         if (results.length > 0) {
@@ -85,7 +85,7 @@ const byZipOrAddr = async (zipCode, addr, sortByPrice) => {
 
           let rzips = closeZipCodes(
             zipCode,
-            res.map((item) => item.zip)
+            res.map((item) => item.zip),
           );
 
           if (rzips.length > 0)
@@ -222,7 +222,7 @@ const byLatLng = async (args) => {
             where
               pr.location_verified = true
         ) a`,
-      args
+      args,
     );
     return results;
   } catch (e) {
@@ -235,7 +235,7 @@ const byAddr = async (addr) => {
   let termsarr = addr;
   let substrings = splitStringIntoSubstrings(termsarr);
   const ilikeConditions = substrings.map(
-    (term) => `pr.prop_address ILIKE '%${term}%'`
+    (term) => `pr.prop_address ILIKE '%${term}%'`,
   );
 
   const ilikeClause = ilikeConditions.join(" OR ");
@@ -272,7 +272,7 @@ const byAddrB = async (addr) => {
   let substrings = splitStringIntoSubstrings(termsarr);
   try {
     const results = await db.any(
-      `select ps.*, pr.prop_address, pr.zip, pr.billing_type, pr.property_id from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true`
+      `select ps.*, pr.prop_address, pr.zip, pr.billing_type, pr.property_id from parking_spaces ps join properties pr on ps.property_lookup_id = pr.property_id where pr.location_verified = true`,
     );
     if (!results?.length) {
       throw new SQLError("no data in spaces table");
@@ -313,12 +313,17 @@ const bySpaceId = async (id) => {
   select property_lookup_id from parking_spaces where space_id = $1
 )
 SELECT
-  p.*,
-  s.*,
-  cu.first_name AS client_first_name,
-  cu.last_name AS client_last_name,
-  ru.renter_id,
-  ru.renter_address,
+  p.space_id,
+  p.price,
+  p.sp_type,
+  s.prop_address,
+  s.number_spaces,
+  s.latitude,
+  s.longitude,
+  s.billing_type,
+  s.property_id,
+  cu.first_name AS first_name,
+  cu.last_name AS last_name,
   ru.renter_email,
   round(rating, 2) rating
 FROM
@@ -335,7 +340,7 @@ natural join
 WHERE
   p.space_id = $1;
 `,
-      id
+      id,
     );
 
     if (results.length > 0) return results;
@@ -355,11 +360,9 @@ const getSpotDetailsByIdQuery = async (id) => {
         s.*,
         cu.first_name AS client_first_name,
         cu.last_name AS client_last_name,
-        ru.renter_id,
-        ru.renter_address,
         ru.renter_email,
         round(rating, 2) rating,
-        b.*  -- Include booking-related columns
+        b.booking_id
       FROM
         parking_spaces p
       JOIN
@@ -369,11 +372,11 @@ const getSpotDetailsByIdQuery = async (id) => {
       LEFT JOIN
         renter_user ru ON p.space_owner_id = ru.renter_id
       LEFT JOIN
-        bookings b ON p.space_id = b.booking_space_id  -- Join with bookings table
+        bookings b ON p.space_id = b.booking_space_id  
       WHERE
         p.space_id = $1;
       `,
-      id
+      id,
     );
 
     if (results.length > 0) return results;
@@ -397,7 +400,7 @@ const byOccupied = async (args) => {
           ps.property_lookup_id = pr.property_id
       where
           ps.occupied = $1 and pr.zip = $2`,
-      [bool, zip]
+      [bool, zip],
     );
 
     return results;
@@ -434,7 +437,7 @@ from
   ) a
 order by
   count_spaces desc`,
-      body.zipCode
+      body.zipCode,
     );
 
     return results;

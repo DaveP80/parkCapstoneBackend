@@ -92,7 +92,9 @@ const getSoldSpacesByOwnerId = async (id) => {
   try {
     const results = await db.any(
       `select
-      distinct b.*,
+      distinct b.booking_id, b.final_cost,
+      b.rating, b.is_occupied, cast(b.start_time as timestamptz) AS start_time,
+      cast(b.end_time as timestamptz) AS end_time,
       z.owner_id
     from
       bookings b
@@ -129,6 +131,8 @@ const getActiveByOwnerId = async (id) => {
       z.owner_id
     from
       bookings b
+    join payment_transactions pt on pt.pmt_booking_id
+    = b.booking_id
     join (
       select
         *
