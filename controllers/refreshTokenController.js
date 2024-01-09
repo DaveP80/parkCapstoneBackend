@@ -12,7 +12,7 @@ const handleRefreshToken = async (req, res) => {
       res.json(response);
     })
     .catch((e) =>
-      res.status(stc(e)).json({ error: e.error, message: e.message })
+      res.status(stc(e)).json({ error: e.error, message: e.message }),
     );
 };
 

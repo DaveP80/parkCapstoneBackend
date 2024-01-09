@@ -5,7 +5,7 @@ const {
   TokenError,
   RefreshError,
 } = require("../lib/errorHandler/customErrors");
-const { getRoles } = require("../lib/helper/helper")
+const { getRoles } = require("../lib/helper/helper");
 
 const makeToken = async (data) => {
   try {
@@ -30,15 +30,16 @@ const makeToken = async (data) => {
           c.client_id = cu.id
         left join renter_user r on
           c.client_id = r.renter_id`,
-      data
+      data,
     );
     if (foundUser?.length == 0)
       throw new TokenError(
         "Token lookup",
-        "Refresh Token not found in database"
+        "Refresh Token not found in database",
       );
     let email = "";
     let id = -1;
+
     jwt.verify(data, process.env.JWT_TOKENREF_SECRET_KEY, (err, decoded) => {
       if (err || foundUser[0].id !== decoded.id)
         throw new RefreshError("Refresh Token Exp");
@@ -51,7 +52,7 @@ const makeToken = async (data) => {
         email: email,
       },
       process.env.JWT_TOKEN_SECRET_KEY,
-      { expiresIn: "15m" }
+      { expiresIn: "15m" },
     );
     return {
       accessToken,
