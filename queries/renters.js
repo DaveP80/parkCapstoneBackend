@@ -87,7 +87,7 @@ const getPropInfo = async (data) => {
     return e;
   }
 };
-
+//Renter sold spaces query
 const getSoldSpacesByOwnerId = async (id) => {
   try {
     const results = await db.any(
@@ -95,9 +95,11 @@ const getSoldSpacesByOwnerId = async (id) => {
       distinct b.booking_id, b.final_cost,
       b.rating, b.is_occupied, cast(b.start_time as timestamptz) AS start_time,
       cast(b.end_time as timestamptz) AS end_time,
+      case when is_occupied = true and end_time <= CURRENT_TIMESTAMP + interval '10 hours' then true else null end as update,
       z.owner_id
     from
       bookings b
+join payment_transactions pt on pt.pmt_booking_id = b.booking_id
     join (
       select
         *
@@ -107,7 +109,7 @@ const getSoldSpacesByOwnerId = async (id) => {
       on pr.property_id = ps.property_lookup_id
       where
         pr.owner_id = $1) z on
-      b.booking_space_id = z.space_id order by booking_id desc`,
+      b.booking_space_id = z.space_id order by end_time desc, is_occupied desc, booking_id desc`,
       id,
     );
     return results;
