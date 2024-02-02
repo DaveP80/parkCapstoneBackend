@@ -1,33 +1,20 @@
 --
 -- PostgreSQL database dump
 --
---
--- Name: cube; Type: EXTENSION; Schema: -; Owner: -
---
 
-CREATE EXTENSION IF NOT EXISTS cube WITH SCHEMA public;
+-- Dumped from database version 14.10
+-- Dumped by pg_dump version 14.10 (Homebrew)
 
-
---
--- Name: EXTENSION cube; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION cube IS 'data type for multidimensional cubes';
-
-
---
--- Name: earthdistance; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS earthdistance WITH SCHEMA public;
-
-
---
--- Name: EXTENSION earthdistance; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION earthdistance IS 'calculate great-circle distances on the surface of the Earth';
-
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
 
 --
 -- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
@@ -58,7 +45,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.insert_auth_user() OWNER TO parking_i5nr_user;
+ALTER FUNCTION public.insert_auth_user() OWNER TO uzrghwxa;
 
 SET default_tablespace = '';
 
@@ -78,7 +65,7 @@ CREATE TABLE public.auth_users (
 );
 
 
-ALTER TABLE public.auth_users OWNER TO parking_i5nr_user;
+ALTER TABLE public.auth_users OWNER TO uzrghwxa;
 
 --
 -- Name: bookings; Type: TABLE; Schema: public; Owner: parking_i5nr_user
@@ -99,7 +86,7 @@ CREATE TABLE public.bookings (
 );
 
 
-ALTER TABLE public.bookings OWNER TO parking_i5nr_user;
+ALTER TABLE public.bookings OWNER TO uzrghwxa;
 
 --
 -- Name: bookings_booking_id_seq; Type: SEQUENCE; Schema: public; Owner: parking_i5nr_user
@@ -114,7 +101,7 @@ CREATE SEQUENCE public.bookings_booking_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.bookings_booking_id_seq OWNER TO parking_i5nr_user;
+ALTER TABLE public.bookings_booking_id_seq OWNER TO uzrghwxa;
 
 --
 -- Name: bookings_booking_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: parking_i5nr_user
@@ -144,7 +131,7 @@ CREATE TABLE public.client_user (
 );
 
 
-ALTER TABLE public.client_user OWNER TO parking_i5nr_user;
+ALTER TABLE public.client_user OWNER TO uzrghwxa;
 
 --
 -- Name: client_user_client_id_seq; Type: SEQUENCE; Schema: public; Owner: parking_i5nr_user
@@ -159,7 +146,7 @@ CREATE SEQUENCE public.client_user_client_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.client_user_client_id_seq OWNER TO parking_i5nr_user;
+ALTER TABLE public.client_user_client_id_seq OWNER TO uzrghwxa;
 
 --
 -- Name: client_user_client_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: parking_i5nr_user
@@ -187,7 +174,7 @@ CREATE TABLE public.parking_spaces (
 );
 
 
-ALTER TABLE public.parking_spaces OWNER TO parking_i5nr_user;
+ALTER TABLE public.parking_spaces OWNER TO uzrghwxa;
 
 --
 -- Name: parking_spaces_space_id_seq; Type: SEQUENCE; Schema: public; Owner: parking_i5nr_user
@@ -202,7 +189,7 @@ CREATE SEQUENCE public.parking_spaces_space_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.parking_spaces_space_id_seq OWNER TO parking_i5nr_user;
+ALTER TABLE public.parking_spaces_space_id_seq OWNER TO uzrghwxa;
 
 --
 -- Name: parking_spaces_space_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: parking_i5nr_user
@@ -224,7 +211,7 @@ CREATE TABLE public.payment_transactions (
 );
 
 
-ALTER TABLE public.payment_transactions OWNER TO parking_i5nr_user;
+ALTER TABLE public.payment_transactions OWNER TO uzrghwxa;
 
 --
 -- Name: properties; Type: TABLE; Schema: public; Owner: parking_i5nr_user
@@ -246,7 +233,7 @@ CREATE TABLE public.properties (
 );
 
 
-ALTER TABLE public.properties OWNER TO parking_i5nr_user;
+ALTER TABLE public.properties OWNER TO uzrghwxa;
 
 --
 -- Name: refresh_tokens; Type: TABLE; Schema: public; Owner: parking_i5nr_user
@@ -259,7 +246,7 @@ CREATE TABLE public.refresh_tokens (
 );
 
 
-ALTER TABLE public.refresh_tokens OWNER TO parking_i5nr_user;
+ALTER TABLE public.refresh_tokens OWNER TO uzrghwxa;
 
 --
 -- Name: refresh_tokens_refresh_token_id_seq; Type: SEQUENCE; Schema: public; Owner: parking_i5nr_user
@@ -274,7 +261,7 @@ CREATE SEQUENCE public.refresh_tokens_refresh_token_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.refresh_tokens_refresh_token_id_seq OWNER TO parking_i5nr_user;
+ALTER TABLE public.refresh_tokens_refresh_token_id_seq OWNER TO uzrghwxa;
 
 --
 -- Name: refresh_tokens_refresh_token_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: parking_i5nr_user
@@ -298,7 +285,7 @@ CREATE TABLE public.renter_user (
 );
 
 
-ALTER TABLE public.renter_user OWNER TO parking_i5nr_user;
+ALTER TABLE public.renter_user OWNER TO uzrghwxa;
 
 --
 -- Name: bookings booking_id; Type: DEFAULT; Schema: public; Owner: parking_i5nr_user

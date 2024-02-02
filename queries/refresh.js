@@ -41,8 +41,13 @@ const makeToken = async (data) => {
     let id = -1;
 
     jwt.verify(data, process.env.JWT_TOKENREF_SECRET_KEY, (err, decoded) => {
-      if (err || foundUser[0].id !== decoded.id)
-        throw new RefreshError("Refresh Token Exp");
+      if (err || foundUser[0].id !== decoded.id) {
+        if (err.name === "TokenExpiredError") {
+          throw new RefreshError("Refresh Token Expired");
+        } else {
+          throw new RefreshError("Credential Mismatch jwt-refresh");
+        }
+      }
       email = decoded.email;
       id = decoded.id;
     });
