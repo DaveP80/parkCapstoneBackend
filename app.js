@@ -37,6 +37,8 @@ app.use("/auth", authRouter);
 
 app.use("/get-spaces", searchRouter);
 
+app.use("/maps", mapsRouter);
+
 app.use(verifyJWT);
 
 app.use("/spot-details", spotDetailsRouter);
@@ -50,8 +52,6 @@ app.use("/renters", renterRouter);
 app.use("/book", bookingRouter);
 
 app.use("/checkout", pmtRouter);
-
-app.use("/maps", mapsRouter);
 
 app.get("*", (req, res) => {
   res.status(404).send("Page not found!");
